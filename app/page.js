@@ -62,9 +62,9 @@ function reportPDF(title,headers,rows,grandRow,psRows=[]){
  let body=rows.map(r=>r.map((v,i)=>fmt(v,i)));
  if(grandRow){const gr=grandRow.map((v,i)=>fmt(v,i));gr[0]='GRAND TOTAL';gr[1]='';body.push(gr)}
  const totalIndex=grandRow?body.length-1:-1;
- const widths=[9,41,12,24,24,21,20,23,30,24,17,19];
+ const widths=[13,61,18,36,36,31,30,35,45,36,25,28];
  autoTable(d,{
-   startY:31,head:[headers],body,theme:'grid',tableWidth:'wrap',
+   startY:31,head:[headers],body,theme:'grid',tableWidth:400,
    columnStyles:Object.fromEntries(widths.map((w,i)=>[i,{cellWidth:w}])),
    styles:{font:'helvetica',fontSize:9.5,fontStyle:'bold',cellPadding:{top:3,right:1.8,bottom:3,left:1.8},overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.35,textColor:[20,20,20],minCellHeight:12},
    headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:9.2,cellPadding:{top:4,right:1.5,bottom:4,left:1.5},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:25},
