@@ -41,107 +41,52 @@ function parse(wb){
 
 function reportPDF(title,headers,rows,grandRow){
  const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
- d.setFont('helvetica','bold');
- d.setTextColor(...excelBlue);
- d.setFontSize(17);
+ d.setFont('helvetica','bold');d.setTextColor(...excelBlue);d.setFontSize(17);
  d.text('AC-34 MATIALA — OFFICER WISE REPORT',148,13,{align:'center'});
- d.setFontSize(11);
- d.text(title,148,21,{align:'center'});
- d.setFontSize(8);
- d.setTextColor(80,80,80);
- d.text('SIR-2026 • Officer-wise monitoring report',148,26,{align:'center'});
-
+ d.setFontSize(11);d.text(title,148,21,{align:'center'});
+ d.setFontSize(8);d.setTextColor(80,80,80);d.text('SIR-2026 • Officer-wise monitoring report',148,26,{align:'center'});
  const isPctHeader=h=>['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(h);
- const fmt=(v,i)=>{
-   const h=String(headers[i]||'');
-   const num=parseFloat(String(v??''));
-   return isPctHeader(h)&&Number.isFinite(num)?num.toFixed(2):String(v??'');
- };
- const body=rows.map(r=>r.map((v,i)=>fmt(v,i)));
- if(grandRow) body.push(grandRow.map((v,i)=>fmt(v,i)));
+ const fmt=(v,i)=>{const h=String(headers[i]||''),num=parseFloat(String(v??''));return isPctHeader(h)&&Number.isFinite(num)?num.toFixed(2):String(v??'')};
+ let body=rows.map(r=>r.map((v,i)=>fmt(v,i)));
+ if(grandRow){const gr=grandRow.map((v,i)=>fmt(v,i));gr[0]='GRAND TOTAL';gr[1]='';body.push(gr)}
  const totalIndex=grandRow?body.length-1:-1;
-
- autoTable(d,{
-   startY:31,
-   head:[headers],
-   body,
-   theme:'grid',
-   tableWidth:'wrap',
-   columnStyles:{
-     0:{cellWidth:10},
-     1:{cellWidth:42},
-     2:{cellWidth:13},
-     3:{cellWidth:25},
-     4:{cellWidth:25},
-     5:{cellWidth:22},
-     6:{cellWidth:21},
-     7:{cellWidth:24},
-     8:{cellWidth:31},
-     9:{cellWidth:25},
-     10:{cellWidth:18},
-     11:{cellWidth:20}
-   },
-   styles:{
-     font:'helvetica',
-     fontSize:7.1,
-     fontStyle:'bold',
-     cellPadding:{top:3.2,right:2.2,bottom:3.2,left:2.2},
-     overflow:'linebreak',
-     valign:'middle',
-     halign:'center',
-     lineColor:[120,120,120],
-     lineWidth:.25,
-     textColor:[20,20,20],
-     minCellHeight:12
-   },
-   headStyles:{
-     fillColor:excelBlue,
-     textColor:excelHeaderText,
-     font:'helvetica',
-     fontStyle:'bold',
-     fontSize:7.2,
-     cellPadding:{top:4.5,right:2.2,bottom:4.5,left:2.2},
-     halign:'center',
-     valign:'middle',
-     overflow:'linebreak',
-     minCellHeight:25
-   },
-   alternateRowStyles:{fillColor:[242,242,242]},
-   didParseCell:data=>{
-     if(data.section==='body' && data.row.index===totalIndex){
-       data.cell.styles.fillColor=totalYellow;
-       data.cell.styles.fontStyle='bold';
-       data.cell.styles.fontSize=7.3;
-     }
-     const h=String(headers[data.column.index]||'');
-     if(data.section==='body' && isPctHeader(h)){
-       const v=parseFloat(String(data.cell.raw).replace('%',''));
-       if(Number.isFinite(v)) data.cell.styles.fillColor=scaleColor(v);
-     }
-   },
-   didDrawPage:data=>{
-     d.setFont('helvetica','normal');
-     d.setFontSize(6.5);
-     d.setTextColor(100,100,100);
-     d.text('AC-34 MATIALA • SIR-2026',8,204);
-     d.text('Page '+d.internal.getNumberOfPages(),289,204,{align:'right'});
-   },
-   margin:{left:5,right:5,top:31,bottom:12},
-   rowPageBreak:'avoid'
- });
+ autoTable(d,{startY:31,head:[headers],body,theme:'grid',tableWidth:'wrap',
+ columnStyles:{0:{cellWidth:10},1:{cellWidth:42},2:{cellWidth:13},3:{cellWidth:25},4:{cellWidth:25},5:{cellWidth:22},6:{cellWidth:21},7:{cellWidth:24},8:{cellWidth:31},9:{cellWidth:25},10:{cellWidth:18},11:{cellWidth:20}},
+ styles:{font:'helvetica',fontSize:7.1,fontStyle:'bold',cellPadding:{top:3.2,right:2.2,bottom:3.2,left:2.2},overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.35,textColor:[20,20,20],minCellHeight:12},
+ headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:7.2,cellPadding:{top:4.5,right:2.2,bottom:4.5,left:2.2},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:25},
+ alternateRowStyles:{fillColor:[242,242,242]},
+ didParseCell:data=>{
+   if(data.section==='body'&&data.row.index===totalIndex){data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold';data.cell.styles.fontSize=7.3}
+   const h=String(headers[data.column.index]||'');
+   if(data.section==='body'&&isPctHeader(h)){const v=parseFloat(String(data.cell.raw).replace('%',''));if(Number.isFinite(v))data.cell.styles.fillColor=scaleColor(v)}
+   if(data.section==='body'&&data.row.index===totalIndex&&data.column.index===1){data.cell.text=[];data.cell.styles.fillColor=totalYellow}
+ },
+ didDrawCell:data=>{
+   if(data.section==='body'&&data.row.index===totalIndex&&data.column.index===1){
+     const first=data.table.columns[0], x=first.x, w=first.width+data.cell.width, y=data.cell.y, h=data.cell.height;
+     d.setFillColor(...totalYellow);d.setDrawColor(0,0,0);d.setLineWidth(.35);d.rect(x,y,w,h,'FD');
+     d.setFont('helvetica','bold');d.setFontSize(7.3);d.setTextColor(20,20,20);d.text('GRAND TOTAL',x+w/2,y+h/2+2.5,{align:'center'});
+   }
+ },
+ didDrawPage:()=>{d.setFont('helvetica','normal');d.setFontSize(6.5);d.setTextColor(100,100,100);d.text('AC-34 MATIALA • SIR-2026',8,204);d.text('Page '+d.internal.getNumberOfPages(),289,204,{align:'right'})},
+ margin:{left:5,right:5,top:31,bottom:12},rowPageBreak:'avoid'});
  d.save('AC34_'+title.replace(/[^A-Za-z0-9]+/g,'_')+'_Officer_Wise_Report.pdf');
 }
 function psPDF(o,rows){
  const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
- d.setFont('helvetica','bold');d.setFontSize(16);d.setTextColor(...excelBlue);d.text('AC-34 MATIALA — OFFICER WISE PS REPORT',148,13,{align:'center'});
- d.setFontSize(11);d.text(o.name,148,20,{align:'center'});
+ d.setFont('helvetica','bold');d.setTextColor(...excelBlue);d.setFontSize(17);
+ d.text('AC-34 MATIALA — OFFICER WISE PS REPORT',148,13,{align:'center'});
+ d.setFontSize(12);d.text(o.name,148,21,{align:'center'});
+ d.setFontSize(8);d.setTextColor(80,80,80);d.text('SIR-2026 • Complete PS-wise report',148,26,{align:'center'});
+ d.setFontSize(8.5);d.setTextColor(20,20,20);
+ d.text('TOTAL PS: '+o.ps,10,32);d.text('NOTICE GENERATED: '+o.generated,55,32);d.text('SCHEDULED: '+o.scheduled,112,32);d.text('DELIVERED: '+o.delivered,160,32);d.text('DOCS UPLOADED: '+o.docs,208,32);d.text('HEARINGS HELD: '+o.held,262,32);
  const headers=['PS','BLO','Supervisor','Scheduled','Delivered','Pending','% Delivered','Docs Uploaded','% Docs','Hearing','Date(s)'];
- autoTable(d,{startY:26,head:[headers],body:rows.map(r=>[r.ps,r.blo,r.supervisor,r.scheduled,r.delivered,r.pending,pct(r.deliveredPct),r.docs,pct(r.docsPct),r.status||'—',r.dates||'—']),theme:'grid',
- styles:{fontSize:6,cellPadding:1.5,overflow:'linebreak',valign:'middle',lineColor:[190,190,190],lineWidth:.15},
- headStyles:{fillColor:excelBlue,textColor:excelHeaderText,fontStyle:'bold',halign:'center'},
- alternateRowStyles:{fillColor:stripe},
- didParseCell:data=>{if(data.section==='body' && (data.column.index===6||data.column.index===8)){const v=parseFloat(String(data.cell.raw));if(Number.isFinite(v))data.cell.styles.fillColor=scaleColor(v)}},
- margin:{left:8,right:8,bottom:10}});
+ const body=rows.map(r=>[r.ps,r.blo,r.supervisor,r.scheduled,r.delivered,r.pending,pct(r.deliveredPct),r.docs,pct(r.docsPct),r.status||'—',r.dates||'—']);
+ body.push(['TOTAL','', '',rows.reduce((a,r)=>a+n(r.scheduled),0),rows.reduce((a,r)=>a+n(r.delivered),0),rows.reduce((a,r)=>a+n(r.pending),0),'',rows.reduce((a,r)=>a+n(r.docs),0),'','','']);
+ const totalIndex=body.length-1;
+ autoTable(d,{startY:36,head:[headers],body,theme:'grid',styles:{font:'helvetica',fontSize:7,fontStyle:'bold',cellPadding:2,overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.3,textColor:[20,20,20]},headStyles:{fillColor:excelBlue,textColor:excelHeaderText,fontSize:7.2,fontStyle:'bold',minCellHeight:18,halign:'center'},alternateRowStyles:{fillColor:stripe},
+ didParseCell:data=>{if(data.section==='body'&&data.row.index===totalIndex){data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold'}if(data.section==='body'&&(data.column.index===6||data.column.index===8)){const v=parseFloat(String(data.cell.raw));if(Number.isFinite(v))data.cell.styles.fillColor=scaleColor(v)}},
+ margin:{left:5,right:5,bottom:12,top:36}});
  d.save('AC34_'+o.name.replace(/[^A-Za-z0-9]+/g,'_')+'_PS_Report.pdf');
 }
 
@@ -151,7 +96,9 @@ export default function Page(){
  useEffect(()=>{if(tab==='report'&&reportWrap.current) reportWrap.current.scrollLeft=0},[tab,data]);
  const officer=data?.officers.find(x=>x.name===sel)||data?.officers[0];
  const idx=officer?data.officers.findIndex(x=>x.name===officer.name):-1;
- const rows=useMemo(()=>data?.details.filter(x=>x.officer===officer?.name).filter(r=>String(r.ps).includes(q)||String(r.blo).toLowerCase().includes(q.toLowerCase())||String(r.supervisor).toLowerCase().includes(q.toLowerCase()))||[],[data,officer,q]);
+ const normName=s=>String(s??'').replace(/\s+/g,' ').trim().toLowerCase();
+ const allOfficerRows=useMemo(()=>data?.details.filter(x=>normName(x.officer)===normName(officer?.name))||[],[data,officer]);
+ const rows=useMemo(()=>allOfficerRows.filter(r=>String(r.ps).includes(q)||String(r.blo).toLowerCase().includes(q.toLowerCase())||String(r.supervisor).toLowerCase().includes(q.toLowerCase())),[allOfficerRows,q]);
  function upload(e){const f=e.target.files?.[0];if(!f)return;setBusy(true);setFile(f.name);f.arrayBuffer().then(b=>{const x=parse(XLSX.read(b,{type:'array',cellDates:true}));if(!x.officers.length)throw Error('Officer Wise Report sheet not found');setData(x);setSel(x.officers[0].name);setQ('')}).catch(e=>alert(e.message||'Excel could not be read')).finally(()=>{setBusy(false);e.target.value=''})}
  function downloadOfficerWise(o,i){reportPDF(o.name,data.reportHeaders,[data.reportRows[i]],null)}
  function downloadAllOfficerWise(){data.officers.forEach((o,i)=>setTimeout(()=>downloadOfficerWise(o,i),i*500))}
@@ -163,7 +110,7 @@ export default function Page(){
  <nav className="tabs"><button className={tab==='dash'?'active':''} onClick={()=>setTab('dash')}>6 OFFICER DASHBOARDS</button><button className={tab==='report'?'active':''} onClick={()=>setTab('report')}>OFFICER WISE REPORT</button><button className="all" onClick={()=>{downloadConsolidated();setTimeout(downloadAllOfficerWise,700)}}>DOWNLOAD ALL OFFICER PDFs</button></nav>
  {tab==='dash'?<>
  <section className="officer-grid">{data.officers.map((o,i)=><button key={o.name} className={'officer-card '+(officer.name===o.name?'active':'')} onClick={()=>{setSel(o.name);setQ('')}}><b>{o.name}</b><strong>{o.ps}</strong><small>PS</small><span>Delivered <em>{o.delivered}</em> • Docs <em>{o.docs}</em> • Held <em>{o.held}</em></span></button>)}</section>
- <section className="summary">{[['Officer',officer.name],['PS',officer.ps],['Generated',officer.generated],['Scheduled',officer.scheduled],['Delivered',officer.delivered],['% Delivered',pct(officer.deliveredPct)],['Docs',officer.docs],['Hearings',officer.held]].map(x=><div key={x[0]}><small>{x[0]}</small><b>{x[1]}</b></div>)}<button className="download" onClick={()=>{psPDF(officer,rows);downloadOfficerWise(officer,idx)}}>DOWNLOAD OFFICER + PS PDFs</button></section>
+ <section className="summary">{[['Officer',officer.name],['PS',officer.ps],['Generated',officer.generated],['Scheduled',officer.scheduled],['Delivered',officer.delivered],['% Delivered',pct(officer.deliveredPct)],['Docs',officer.docs],['Hearings',officer.held]].map(x=><div key={x[0]}><small>{x[0]}</small><b>{x[1]}</b></div>)}<button className="download" onClick={()=>{psPDF(officer,allOfficerRows);downloadOfficerWise(officer,idx)}}>DOWNLOAD OFFICER + PS PDFs</button></section>
  <section className="table-section"><div className="table-head"><div><h2>{officer.name} — PS DETAIL</h2><small>{rows.length} PS</small></div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search PS / BLO / Supervisor"/></div><div className="table-wrap"><table><thead><tr><th>PS</th><th>BLO</th><th>Supervisor</th><th>Scheduled</th><th>Delivered</th><th>Pending</th><th>% Delivered</th><th>Docs Uploaded</th><th>% Docs</th><th>Hearing</th><th>Date(s)</th></tr></thead><tbody>{rows.map(r=><tr key={r.ps}><td><b>{r.ps}</b></td><td>{r.blo}</td><td>{r.supervisor}</td><td>{r.scheduled}</td><td>{r.delivered}</td><td>{r.pending}</td><td><i className={'pill '+(r.deliveredPct>=80?'good':r.deliveredPct>=60?'mid':'low')}>{pct(r.deliveredPct)}</i></td><td>{r.docs}</td><td>{pct(r.docsPct)}</td><td>{r.status||'—'}</td><td>{r.dates||'—'}</td></tr>)}</tbody></table></div></section>
  </>:<section className="table-section report-excel"><div className="excel-report-title">AC-34 MATIALA — OFFICER WISE REPORT</div><div className="report-head"><div><h2>OFFICER WISE REPORT — ALL 6 OFFICERS</h2><small>Same visible headings, hidden columns excluded, Excel-style colours preserved</small></div><div className="report-actions"><button className="download" onClick={downloadConsolidated}>DOWNLOAD CONSOLIDATED PDF</button><button className="download" onClick={downloadAllOfficerWise}>DOWNLOAD 6 OFFICER PDFs</button></div></div><div className="table-wrap report-scroll" ref={reportWrap}><table><thead><tr>{data.reportHeaders.map(x=><th key={x}>{x}</th>)}</tr></thead><tbody>{data.reportRows.map((r,i)=><tr key={i}>{r.map((v,j)=>{const h=data.reportHeaders[j];const val=String(v??'');const isPct=['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(h);const numv=parseFloat(val);const display=isPct&&Number.isFinite(numv)?numv.toFixed(2):val;return <td key={j} style={isPct&&Number.isFinite(numv)?{background:'rgb('+scaleColor(numv).join(',')+')',fontWeight:700}:undefined}>{display}</td>})}</tr>)}{data.grandRow&&<tr className="grand">{data.grandRow.map((v,j)=>{const h=data.reportHeaders[j];const val=String(v??'');const isPct=['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(h);const numv=parseFloat(val);return <td key={j}>{isPct&&Number.isFinite(numv)?numv.toFixed(2):val}</td>})}</tr>}</tbody></table></div></section>}
  </>}
