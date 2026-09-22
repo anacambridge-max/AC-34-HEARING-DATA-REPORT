@@ -41,13 +41,25 @@ function parseReference(wb){
  if(!m.length||!h.length) throw Error('Reference workbook must contain PS Mapping and Hearing Dates sheets.');
  const mr=m.slice(1).filter(r=>r?.[0]!=null).map(r=>[n(r[0]),String(r[1]??''),String(r[2]??''),String(r[3]??''),String(r[4]??'')]);
  const hr=h.slice(1).filter(r=>r?.[0]!=null).map(r=>[n(r[0]),String(r[4]??''),String(r[5]??'')]);
- let order=[];
+ // IMPORTANT: "Hearing Notice Scheduled NO MAPPING" is NOT the BLO Documents sheet's
+ // "Hearing Notice Scheduled" field. It comes from the reference Officer Wise PS Detail.
+ const pd=rowsFor(wb,'Officer Wise PS Detail');
+ const si=pd.findIndex(r=>r?.some(v=>String(v??'').trim().toLowerCase()==='part no') && r?.some(v=>String(v??'').trim().toLowerCase()==='hearing notice scheduled no mapping'));
+ const scheduledMap=new Map();
+ if(si>=0){
+   const ph=pd[si].map(v=>String(v??'').trim().toLowerCase());
+   const pi=ph.findIndex(v=>v==='part no');
+   const sci=ph.findIndex(v=>v==='hearing notice scheduled no mapping');
+   pd.slice(si+1).forEach(r=>{const ps=n(r[pi]);if(ps)scheduledMap.set(ps,n(r[sci]))});
+ }
+ if(scheduledMap.size<400) throw Error('Reference workbook: Hearing Notice Scheduled NO MAPPING data for all 430 PS is required.');
+ let order= [];
  const ow=rowsFor(wb,'Officer Wise Report');
  const oi=Math.max(0,ow.findIndex(r=>r?.some(v=>String(v??'').trim().toLowerCase()==='officer name')));
  if(oi>=0) order=ow.slice(oi+1).filter(r=>r?.[1]&&!String(r[1]).toUpperCase().includes('GRAND TOTAL')).map(r=>cleanOfficerName(r[1]));
  const names=[...new Set(mr.map(r=>cleanOfficerName(r[1])))];
  order=[...order,...names.filter(x=>!order.includes(x))];
- return {mapping:mr,hearing:hr,officerOrder:order};
+ return {mapping:mr,hearing:hr,scheduledMap:Object.fromEntries(scheduledMap),officerOrder:order};
 }
 function parseECI(wb){
  const names=['sirNoticeGenerate','ECI Raw Data','Part Wise Report'];
@@ -90,7 +102,7 @@ function buildData(ref,eci,blo){
  const names=ref.officerOrder.length?ref.officerOrder:[...new Set(ref.mapping.map(r=>cleanOfficerName(r[1])))];
  const details=ref.mapping.map(r=>{
    const ps=n(r[0]),map=mm.get(ps)||{},e=eci.get(ps)||{},b=blo.get(ps)||{},h=hm.get(ps)||{};
-   const delivered=n(e.delivered),scheduled=n(b.scheduled),docs=n(b.docs),held=n(e.held),lapsed=n(e.lapsed);
+   const delivered=n(e.delivered),scheduled=n(ref.scheduledMap?.[ps]),docs=n(b.docs),held=n(e.held),lapsed=n(e.lapsed);
    return {ps,officer:map.officer,blo:map.blo,supervisor:map.supervisor,centre:map.centre,generated:n(e.generated),pendingGen:n(e.pendingGen),scheduled,delivered,pending:n(e.pending),deliveredPct:scheduled?delivered/scheduled*100:0,docs,docsPct:delivered?docs/delivered*100:0,dates:h.dates||'',status:h.status||'',heldLapsed:held+lapsed,disposal:held,disposalPct:(held+lapsed)?held/(held+lapsed)*100:0};
  });
  const wanted=['S No','Officer Name','No. of PS','Notice Generated (NO MAP + ANOMALY)','Hearing Notice Scheduled NO MAPPING','NO MAP NOTICE DELIVERED','% NO MAPPING DELIVERED','Documents Uploaded by BLO','% Docs Uploaded (of Notice Delivered)','Hearing Held + Date Lapsed','Total Disposal','% Total Disposal'];
