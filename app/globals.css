@@ -47,3 +47,5 @@
 .table-section:not(.report-excel) tbody tr:nth-child(odd){background:#fff!important}
 
 .source-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:760px}.setup-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:1000px}.status-box{margin-top:16px;padding:12px;border:1px solid #29415e;border-radius:10px;background:#0c1b2d;color:#bcd0e7}.status-box b{color:#fff}@media(max-width:900px){.setup-grid{grid-template-columns:1fr}.source-actions{justify-content:flex-start}}
+
+.ps-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.ps-controls select,.ps-controls input{height:38px;border:1px solid #29415e;border-radius:8px;background:#081522;color:#e8f0f8;padding:0 10px}.ps-controls select{min-width:210px}.sort-dir{height:38px;border:1px solid #29415e;border-radius:8px;background:#183657;color:#fff;padding:0 12px;font-weight:800;cursor:pointer}@media(max-width:900px){.ps-controls{justify-content:flex-start;width:100%}.ps-controls input{width:100%}.ps-controls select{flex:1;min-width:180px}}
