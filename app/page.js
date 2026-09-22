@@ -94,8 +94,8 @@ function reportPDF(title,headers,rows,grandRow,psRows=[]){
    d.text('Report Generated: '+generatedAt,291,26,{align:'right'});
    autoTable(d,{startY:31,head:[psHeaders],body:psBody,theme:'grid',tableWidth:'wrap',
      columnStyles:Object.fromEntries([9,10,32,36,37,25,23,25,19,23,22,22,25,24,25,17].map((w,i)=>[i,{cellWidth:w}])),
-     styles:{font:'helvetica',fontSize:6.2,fontStyle:'bold',cellPadding:{top:2.5,right:1.4,bottom:2.5,left:1.4},overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.35,textColor:[20,20,20],minCellHeight:11},
-     headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:6.5,cellPadding:{top:4,right:1.2,bottom:4,left:1.2},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:22},
+     styles:{font:'helvetica',fontSize:8.2,fontStyle:'bold',cellPadding:{top:3.2,right:1.6,bottom:3.2,left:1.6},overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.35,textColor:[20,20,20],minCellHeight:14},
+     headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:8,cellPadding:{top:5,right:1.5,bottom:5,left:1.5},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:30},
      alternateRowStyles:{fillColor:stripe},
      didParseCell:data=>{if(data.section==='body'&&data.row.index===psBody.length-1){data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold'} if(data.section==='body'&&[9,11,15].includes(data.column.index)){const v=parseFloat(String(data.cell.raw));if(Number.isFinite(v))data.cell.styles.fillColor=scaleColor(v)}},
      didDrawPage:()=>{d.setFont('helvetica','normal');d.setFontSize(6.5);d.setTextColor(100,100,100);d.text('AC-34 MATIALA • SIR-2026',8,285);d.text('Generated: '+generatedAt,148,285,{align:'center'});d.text('Page '+d.internal.getNumberOfPages(),289,285,{align:'right'})},
