@@ -118,8 +118,8 @@ function psPDF(o,rows){
  const widths=[9,10,32,36,37,25,23,25,19,23,22,22,25,24,25,17,19];
  autoTable(d,{startY:32,head:[headers],body,theme:'grid',tableWidth:'wrap',
  columnStyles:Object.fromEntries(widths.map((w,i)=>[i,{cellWidth:w}])),
- styles:{font:'helvetica',fontSize:6.4,fontStyle:'bold',cellPadding:{top:2.5,right:1.5,bottom:2.5,left:1.5},overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.35,textColor:[20,20,20],minCellHeight:11},
- headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:6.4,cellPadding:{top:4,right:1.2,bottom:4,left:1.2},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:24},
+ styles:{font:'helvetica',fontSize:7.2,fontStyle:'bold',cellPadding:{top:2.5,right:1.5,bottom:2.5,left:1.5},overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.35,textColor:[20,20,20],minCellHeight:12},
+ headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:7.0,cellPadding:{top:4,right:1.2,bottom:4,left:1.2},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:24},
  alternateRowStyles:{fillColor:stripe},
  didParseCell:data=>{
    if(data.section==='body'&&data.row.index===totalIndex){data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold'}
