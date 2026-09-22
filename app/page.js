@@ -35,7 +35,7 @@ function parse(wb){
  const officers=officerRows.map(r=>({sno:r[0],name:String(r[1]),ps:n(r[2]),generated:n(r[3]),pendingGen:n(r[4]),scheduled:n(r[5]),delivered:n(r[6]),deliveredPct:n(r[7]),pendingDelivery:n(r[8]),held:n(r[9]),lapsed:n(r[10]),reschedule:n(r[11]),deoPending:n(r[12]),deoGt5:n(r[13]),deoVerified:n(r[14]),docs:n(r[15])}));
  const mm=new Map(m.slice(1).filter(r=>r?.[0]!=null).map(r=>[n(r[0]),{blo:r[2]||'',supervisor:r[3]||''}])),hh=new Map(h.slice(1).filter(r=>r?.[0]!=null).map(r=>[n(r[0]),{dates:r[4]||'',status:r[5]||''}]));
  let cur='',details=[];
- b.slice(2).forEach(r=>{if(!r||r[0]==null)return;if(r[1]==='OFFICER TOTAL'){cur=r[2]||'';return}if(typeof r[1]==='number'){const ps=n(r[1]);details.push({ps,officer:r[2]||cur,blo:r[3]||mm.get(ps)?.blo||'',supervisor:r[4]||mm.get(ps)?.supervisor||'',scheduled:n(r[8]),delivered:n(r[9]),pending:n(r[10]),deliveredPct:n(r[12]),docs:n(r[13]),docsPct:n(r[14]),...(hh.get(ps)||{})})}});
+ b.slice(2).forEach(r=>{if(!r||r[0]==null)return;if(r[1]==='OFFICER TOTAL'){cur=r[2]||'';return}if(typeof r[1]==='number'){const ps=n(r[1]);details.push({ps,officer:r[2]||cur,blo:r[3]||mm.get(ps)?.blo||'',supervisor:r[4]||mm.get(ps)?.supervisor||'',generated:n(r[6]),pendingGen:n(r[7]),scheduled:n(r[8]),delivered:n(r[9]),pending:n(r[10]),deliveredPct:n(r[12]),docs:n(r[13]),docsPct:n(r[14]),heldLapsed:n(r[15]),disposal:n(r[17]),disposalPct:n(r[18]),...(hh.get(ps)||{})})}});
  return{officers,details,reportHeaders,reportRows,grandRow,visibleIndexes};
 }
 
