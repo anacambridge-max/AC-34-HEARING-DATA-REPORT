@@ -42,13 +42,13 @@ function parse(wb){
 }
 
 function reportPDF(title,headers,rows,grandRow,psRows=[]){
- const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a1'});
+ const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a3'});
  const generatedAt=new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
  d.setFont('helvetica','bold');d.setTextColor(...excelBlue);d.setFontSize(17);
  d.text('AC-34 MATIALA — OFFICER WISE REPORT',210,13,{align:'center'});
  d.setFontSize(11);d.text(title,210,21,{align:'center'});
  d.setFontSize(8);d.setTextColor(80,80,80);d.text('SIR-2026 • Officer-wise monitoring report',210,26,{align:'center'});
- d.setFontSize(7.5);d.text('Report Generated: '+generatedAt,412,26,{align:'right'});
+ d.setFontSize(7.5);d.text('Report Generated: '+generatedAt,291,26,{align:'right'});
  const isPctHeader=h=>['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(String(h||'').trim());
  const fmt=(v,i)=>{const num=parseFloat(String(v??''));return isPctHeader(headers[i])&&Number.isFinite(num)?num.toFixed(2):String(v??'')};
  let body=rows.map(r=>r.map((v,i)=>fmt(v,i)));
@@ -78,8 +78,8 @@ function reportPDF(title,headers,rows,grandRow,psRows=[]){
        if(Number.isFinite(v)){d.setFillColor(...scaleColor(v));d.rect(data.cell.x,data.cell.y,data.cell.width,data.cell.height,'F');d.setTextColor(20,20,20);d.setFont('helvetica','bold');d.setFontSize(7.2);d.text(fmt(data.cell.raw,data.column.index),data.cell.x+data.cell.width/2,data.cell.y+data.cell.height/2+2,{align:'center'});}
      }
    },
-   didDrawPage:()=>{d.setFont('helvetica','normal');d.setFontSize(10);d.setTextColor(100,100,100);d.text('AC-34 MATIALA • SIR-2026',12,575);d.text('Generated: '+generatedAt,420,575,{align:'center'});d.text('Page '+d.internal.getNumberOfPages(),828,575,{align:'right'})},
-   margin:{left:5,right:5,top:31,bottom:12},rowPageBreak:'avoid',pageBreak:'auto'
+   didDrawPage:()=>{d.setFont('helvetica','normal');d.setFontSize(10);d.setTextColor(100,100,100);d.text('AC-34 MATIALA • SIR-2026',8,285);d.text('Generated: '+generatedAt,210,285,{align:'center'});d.text('Page '+d.internal.getNumberOfPages(),412,285,{align:'right'})},
+   margin:{left:10,right:10,top:31,bottom:12},rowPageBreak:'avoid',pageBreak:'auto'
  });
  
  if(psRows&&psRows.length){
@@ -88,17 +88,17 @@ function reportPDF(title,headers,rows,grandRow,psRows=[]){
    psBody.push(['','', 'OFFICER TOTAL','','',psRows.reduce((a,r)=>a+n(r.generated),0),psRows.reduce((a,r)=>a+n(r.scheduled),0),psRows.reduce((a,r)=>a+n(r.delivered),0),psRows.reduce((a,r)=>a+n(r.pending),0),'',psRows.reduce((a,r)=>a+n(r.docs),0),'','',psRows.reduce((a,r)=>a+n(r.heldLapsed),0),psRows.reduce((a,r)=>a+n(r.disposal),0),'']);
    d.addPage();
    d.setFont('helvetica','bold');d.setTextColor(...excelBlue);d.setFontSize(16);
-   d.text('AC-34 MATIALA — OFFICER WISE PS DETAIL',148,14,{align:'center'});
-   d.setFontSize(11);d.text(cleanOfficerName(title),148,21,{align:'center'});
-   d.setFontSize(7.5);d.setTextColor(80,80,80);d.text('SIR-2026 • Complete PS-wise report',148,26,{align:'center'});
+   d.text('AC-34 MATIALA — OFFICER WISE PS DETAIL',210,14,{align:'center'});
+   d.setFontSize(11);d.text(cleanOfficerName(title),210,21,{align:'center'});
+   d.setFontSize(7.5);d.setTextColor(80,80,80);d.text('SIR-2026 • Complete PS-wise report',210,26,{align:'center'});
    d.text('Report Generated: '+generatedAt,291,26,{align:'right'});
    autoTable(d,{startY:31,head:[psHeaders],body:psBody,theme:'grid',tableWidth:'wrap',
-     columnStyles:Object.fromEntries([9,10,32,36,37,25,23,25,19,23,22,22,25,24,25,17].map((w,i)=>[i,{cellWidth:w}])),
-     styles:{font:'helvetica',fontSize:8.2,fontStyle:'bold',cellPadding:{top:3.2,right:1.6,bottom:3.2,left:1.6},overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.35,textColor:[20,20,20],minCellHeight:14},
-     headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:8,cellPadding:{top:5,right:1.5,bottom:5,left:1.5},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:30},
+     columnStyles:Object.fromEntries([10,11,31,37,37,25,24,25,22,27,24,27,29,28,26,18].map((w,i)=>[i,{cellWidth:w}])),
+     styles:{font:'helvetica',fontSize:8.8,fontStyle:'bold',cellPadding:{top:3.2,right:1.6,bottom:3.2,left:1.6},overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.35,textColor:[20,20,20],minCellHeight:14},
+     headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:8.5,cellPadding:{top:5,right:1.5,bottom:5,left:1.5},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:30},
      alternateRowStyles:{fillColor:stripe},
      didParseCell:data=>{if(data.section==='body'&&data.row.index===psBody.length-1){data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold'} if(data.section==='body'&&[9,11,15].includes(data.column.index)){const v=parseFloat(String(data.cell.raw));if(Number.isFinite(v))data.cell.styles.fillColor=scaleColor(v)}},
-     didDrawPage:()=>{d.setFont('helvetica','normal');d.setFontSize(6.5);d.setTextColor(100,100,100);d.text('AC-34 MATIALA • SIR-2026',8,285);d.text('Generated: '+generatedAt,148,285,{align:'center'});d.text('Page '+d.internal.getNumberOfPages(),289,285,{align:'right'})},
+     didDrawPage:()=>{d.setFont('helvetica','normal');d.setFontSize(6.5);d.setTextColor(100,100,100);d.text('AC-34 MATIALA • SIR-2026',8,285);d.text('Generated: '+generatedAt,210,285,{align:'center'});d.text('Page '+d.internal.getNumberOfPages(),412,285,{align:'right'})},
      margin:{left:5,right:5,top:31,bottom:12},rowPageBreak:'avoid'
    });
  } d.save('AC34_'+title.replace(/[^A-Za-z0-9]+/g,'_')+'_Officer_Wise_Report.pdf');
