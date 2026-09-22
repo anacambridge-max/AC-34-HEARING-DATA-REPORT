@@ -1,5 +1,5 @@
 'use client';
-import {useMemo,useState} from 'react';
+import {useMemo,useState,useRef,useEffect} from 'react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -27,10 +27,12 @@ function parse(wb){
  const visibleIndexes=wantedHeaders.map(w=>headers.findIndex(h=>norm(h)===norm(w))).filter(i=>i>=0);
  const reportHeaders=visibleIndexes.map(i=>String(headers[i]));
  const rawOfficerRows=a.slice(headerIndex+1).filter(r=>r?.[1]);
- const reportRows=rawOfficerRows.filter(r=>String(r[0]).toUpperCase()!=='GRAND TOTAL').map(r=>visibleIndexes.map(i=>r[i]??''));
- const grand=rawOfficerRows.find(r=>String(r[0]).toUpperCase()==='GRAND TOTAL');
+ const isGrand=r=>r?.some(v=>String(v??'').trim().toUpperCase()==='GRAND TOTAL');
+ const officerRows=rawOfficerRows.filter(r=>!isGrand(r));
+ const reportRows=officerRows.map(r=>visibleIndexes.map(i=>r[i]??''));
+ const grand=rawOfficerRows.find(isGrand);
  const grandRow=grand?visibleIndexes.map(i=>grand[i]??''):null;
- const officers=rawOfficerRows.filter(r=>String(r[0]).toUpperCase()!=='GRAND TOTAL').map(r=>({sno:r[0],name:String(r[1]),ps:n(r[2]),generated:n(r[3]),pendingGen:n(r[4]),scheduled:n(r[5]),delivered:n(r[6]),deliveredPct:n(r[7]),pendingDelivery:n(r[8]),held:n(r[9]),lapsed:n(r[10]),reschedule:n(r[11]),deoPending:n(r[12]),deoGt5:n(r[13]),deoVerified:n(r[14]),docs:n(r[15])}));
+ const officers=officerRows.map(r=>({sno:r[0],name:String(r[1]),ps:n(r[2]),generated:n(r[3]),pendingGen:n(r[4]),scheduled:n(r[5]),delivered:n(r[6]),deliveredPct:n(r[7]),pendingDelivery:n(r[8]),held:n(r[9]),lapsed:n(r[10]),reschedule:n(r[11]),deoPending:n(r[12]),deoGt5:n(r[13]),deoVerified:n(r[14]),docs:n(r[15])}));
  const mm=new Map(m.slice(1).filter(r=>r?.[0]!=null).map(r=>[n(r[0]),{blo:r[2]||'',supervisor:r[3]||''}])),hh=new Map(h.slice(1).filter(r=>r?.[0]!=null).map(r=>[n(r[0]),{dates:r[4]||'',status:r[5]||''}]));
  let cur='',details=[];
  b.slice(2).forEach(r=>{if(!r||r[0]==null)return;if(r[1]==='OFFICER TOTAL'){cur=r[2]||'';return}if(typeof r[1]==='number'){const ps=n(r[1]);details.push({ps,officer:r[2]||cur,blo:r[3]||mm.get(ps)?.blo||'',supervisor:r[4]||mm.get(ps)?.supervisor||'',scheduled:n(r[8]),delivered:n(r[9]),pending:n(r[10]),deliveredPct:n(r[12]),docs:n(r[13]),docsPct:n(r[14]),...(hh.get(ps)||{})})}});
@@ -78,6 +80,8 @@ function psPDF(o,rows){
 
 export default function Page(){
  const[data,setData]=useState(null),[sel,setSel]=useState(''),[q,setQ]=useState(''),[file,setFile]=useState(''),[tab,setTab]=useState('dash'),[busy,setBusy]=useState(false);
+ const reportWrap=useRef(null);
+ useEffect(()=>{if(tab==='report'&&reportWrap.current) reportWrap.current.scrollLeft=0},[tab,data]);
  const officer=data?.officers.find(x=>x.name===sel)||data?.officers[0];
  const idx=officer?data.officers.findIndex(x=>x.name===officer.name):-1;
  const rows=useMemo(()=>data?.details.filter(x=>x.officer===officer?.name).filter(r=>String(r.ps).includes(q)||String(r.blo).toLowerCase().includes(q.toLowerCase())||String(r.supervisor).toLowerCase().includes(q.toLowerCase()))||[],[data,officer,q]);
@@ -94,7 +98,7 @@ export default function Page(){
  <section className="officer-grid">{data.officers.map((o,i)=><button key={o.name} className={'officer-card '+(officer.name===o.name?'active':'')} onClick={()=>{setSel(o.name);setQ('')}}><b>{o.name}</b><strong>{o.ps}</strong><small>PS</small><span>Delivered <em>{o.delivered}</em> • Docs <em>{o.docs}</em> • Held <em>{o.held}</em></span></button>)}</section>
  <section className="summary">{[['Officer',officer.name],['PS',officer.ps],['Generated',officer.generated],['Scheduled',officer.scheduled],['Delivered',officer.delivered],['% Delivered',pct(officer.deliveredPct)],['Docs',officer.docs],['Hearings',officer.held]].map(x=><div key={x[0]}><small>{x[0]}</small><b>{x[1]}</b></div>)}<button className="download" onClick={()=>{psPDF(officer,rows);downloadOfficerWise(officer,idx)}}>DOWNLOAD OFFICER + PS PDFs</button></section>
  <section className="table-section"><div className="table-head"><div><h2>{officer.name} — PS DETAIL</h2><small>{rows.length} PS</small></div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search PS / BLO / Supervisor"/></div><div className="table-wrap"><table><thead><tr><th>PS</th><th>BLO</th><th>Supervisor</th><th>Scheduled</th><th>Delivered</th><th>Pending</th><th>% Delivered</th><th>Docs Uploaded</th><th>% Docs</th><th>Hearing</th><th>Date(s)</th></tr></thead><tbody>{rows.map(r=><tr key={r.ps}><td><b>{r.ps}</b></td><td>{r.blo}</td><td>{r.supervisor}</td><td>{r.scheduled}</td><td>{r.delivered}</td><td>{r.pending}</td><td><i className={'pill '+(r.deliveredPct>=80?'good':r.deliveredPct>=60?'mid':'low')}>{pct(r.deliveredPct)}</i></td><td>{r.docs}</td><td>{pct(r.docsPct)}</td><td>{r.status||'—'}</td><td>{r.dates||'—'}</td></tr>)}</tbody></table></div></section>
- </>:<section className="table-section report-excel"><div className="excel-report-title">AC-34 MATIALA — OFFICER WISE REPORT</div><div className="report-head"><div><h2>OFFICER WISE REPORT — ALL 6 OFFICERS</h2><small>Same visible headings, hidden columns excluded, Excel-style colours preserved</small></div><div className="report-actions"><button className="download" onClick={downloadConsolidated}>DOWNLOAD CONSOLIDATED PDF</button><button className="download" onClick={downloadAllOfficerWise}>DOWNLOAD 6 OFFICER PDFs</button></div></div><div className="table-wrap"><table><thead><tr>{data.reportHeaders.map(x=><th key={x}>{x}</th>)}</tr></thead><tbody>{data.reportRows.map((r,i)=><tr key={i}>{r.map((v,j)=>{const h=data.reportHeaders[j];const val=String(v??'');const isPct=['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(h);const numv=parseFloat(val);return <td key={j} style={isPct&&Number.isFinite(numv)?{background:'rgb('+scaleColor(numv).join(',')+')',fontWeight:700}:undefined}>{val}</td>})}</tr>)}{data.grandRow&&<tr className="grand">{data.grandRow.map((v,j)=><td key={j}>{String(v??'')}</td>)}</tr>}</tbody></table></div></section>}
+ </>:<section className="table-section report-excel"><div className="excel-report-title">AC-34 MATIALA — OFFICER WISE REPORT</div><div className="report-head"><div><h2>OFFICER WISE REPORT — ALL 6 OFFICERS</h2><small>Same visible headings, hidden columns excluded, Excel-style colours preserved</small></div><div className="report-actions"><button className="download" onClick={downloadConsolidated}>DOWNLOAD CONSOLIDATED PDF</button><button className="download" onClick={downloadAllOfficerWise}>DOWNLOAD 6 OFFICER PDFs</button></div></div><div className="table-wrap report-scroll" ref={reportWrap}><table><thead><tr>{data.reportHeaders.map(x=><th key={x}>{x}</th>)}</tr></thead><tbody>{data.reportRows.map((r,i)=><tr key={i}>{r.map((v,j)=>{const h=data.reportHeaders[j];const val=String(v??'');const isPct=['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(h);const numv=parseFloat(val);const display=isPct&&Number.isFinite(numv)?numv.toFixed(2):val;return <td key={j} style={isPct&&Number.isFinite(numv)?{background:'rgb('+scaleColor(numv).join(',')+')',fontWeight:700}:undefined}>{display}</td>})}</tr>)}{data.grandRow&&<tr className="grand">{data.grandRow.map((v,j)=>{const h=data.reportHeaders[j];const val=String(v??'');const isPct=['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(h);const numv=parseFloat(val);return <td key={j}>{isPct&&Number.isFinite(numv)?numv.toFixed(2):val}</td>})}</tr>}</tbody></table></div></section>}
  </>}
  <footer>Upload Excel → visible columns only → same report headings → same Excel-style colours → individual + consolidated PDFs.</footer>
  </main>
