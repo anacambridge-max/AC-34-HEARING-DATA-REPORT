@@ -45,3 +45,5 @@
 .table-section:not(.report-excel) th:nth-child(16),.table-section:not(.report-excel) td:nth-child(16){width:100px!important}
 .table-section:not(.report-excel) tbody tr:nth-child(even){background:#f2f2f2!important}
 .table-section:not(.report-excel) tbody tr:nth-child(odd){background:#fff!important}
+
+.source-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:760px}.setup-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:1000px}.status-box{margin-top:16px;padding:12px;border:1px solid #29415e;border-radius:10px;background:#0c1b2d;color:#bcd0e7}.status-box b{color:#fff}@media(max-width:900px){.setup-grid{grid-template-columns:1fr}.source-actions{justify-content:flex-start}}
