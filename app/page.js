@@ -26,9 +26,9 @@ function parse(wb){
  const norm=s=>String(s??'').replace(/\\s+/g,' ').trim().toLowerCase();
  const visibleIndexes=wantedHeaders.map(w=>headers.findIndex(h=>norm(h)===norm(w))).filter(i=>i>=0);
  const reportHeaders=visibleIndexes.map(i=>String(headers[i]));
- const rawOfficerRows=a.slice(headerIndex+1).filter(r=>r?.[1]);
- const isGrand=r=>r?.some(v=>String(v??'').trim().toUpperCase()==='GRAND TOTAL');
- const officerRows=rawOfficerRows.filter(r=>!isGrand(r));
+ const rawOfficerRows=a.slice(headerIndex+1).filter(r=>r?.some(v=>String(v??'').trim()!=='') );
+ const isGrand=r=>r?.some(v=>String(v??'').trim().toUpperCase().replace(/\s+/g,' ')==='GRAND TOTAL');
+ const officerRows=rawOfficerRows.filter(r=>!isGrand(r) && r?.[1]);
  const reportRows=officerRows.map(r=>visibleIndexes.map(i=>r[i]??''));
  const grand=rawOfficerRows.find(isGrand);
  const grandRow=grand?visibleIndexes.map(i=>grand[i]??''):null;
