@@ -97,7 +97,16 @@ function reportPDF(title,headers,rows,grandRow,psRows=[]){
      styles:{font:'helvetica',fontSize:9.5,fontStyle:'bold',cellPadding:{top:3.2,right:1.6,bottom:3.2,left:1.6},overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.35,textColor:[20,20,20],minCellHeight:14},
      headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:9.2,cellPadding:{top:5,right:1.5,bottom:5,left:1.5},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:30},
      alternateRowStyles:{fillColor:stripe},
-     didParseCell:data=>{if(data.section==='body'&&data.row.index===psBody.length-1){data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold'} if(data.section==='body'&&[9,11,15].includes(data.column.index)){const v=parseFloat(String(data.cell.raw));if(Number.isFinite(v))data.cell.styles.fillColor=scaleColor(v)}},
+     didParseCell:data=>{if(data.section==='body'&&data.row.index===psBody.length-1){data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold'} if(data.section==='body'&&[9,11,15].includes(data.column.index)){const v=parseFloat(String(data.cell.raw));if(Number.isFinite(v))data.cell.styles.fillColor=scaleColor(v)}
+     if(data.section==='body'&&data.column.index===12){
+       const row=psRows[data.row.index];
+       if(row && row.dates){
+         const st=String(row.status||'').toLowerCase();
+         if(st.includes('pending')) data.cell.styles.fillColor=[248,105,107];
+         else if(st.includes('partial')) data.cell.styles.fillColor=[255,235,132];
+         else if(st.includes('held')) data.cell.styles.fillColor=[99,190,123];
+       }
+     }},
      didDrawPage:()=>{d.setFont('helvetica','normal');d.setFontSize(6.5);d.setTextColor(100,100,100);d.text('AC-34 MATIALA • SIR-2026',8,285);d.text('Generated: '+generatedAt,210,285,{align:'center'});d.text('Page '+d.internal.getNumberOfPages(),412,285,{align:'right'})},
      margin:{left:5,right:5,top:31,bottom:12},rowPageBreak:'avoid'
    });
