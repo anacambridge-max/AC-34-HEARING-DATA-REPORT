@@ -98,12 +98,12 @@ function buildData(ref,eci,blo){
    const rr=details.filter(r=>cleanOfficerName(r.officer)===cleanOfficerName(name));
    const sum=k=>rr.reduce((a,r)=>a+n(r[k]),0);
    const scheduled=sum('scheduled'),delivered=sum('delivered'),docs=sum('docs'),heldLapsed=sum('heldLapsed'),disposal=sum('disposal');
-   const row=[i+1,name,rr.length,sum('generated'),sum('pendingGen'),scheduled,delivered,scheduled?delivered/scheduled*100:0, sum('pending'),heldLapsed,docs,delivered?docs/delivered*100:0,disposal,heldLapsed?disposal/heldLapsed*100:0];
+   const row=[i+1,name,rr.length,sum('generated'),scheduled,delivered,scheduled?delivered/scheduled*100:0,docs,delivered?docs/delivered*100:0,heldLapsed,disposal,heldLapsed?disposal/heldLapsed*100:0];
    return {sno:i+1,name:cleanOfficerName(name),ps:rr.length,generated:sum('generated'),pendingGen:sum('pendingGen'),scheduled,delivered,deliveredPct:scheduled?delivered/scheduled*100:0,pendingDelivery:sum('pending'),held:disposal,lapsed:heldLapsed-disposal,docs,reportRow:row};
  });
  const reportHeaders=wanted;
  const reportRows=officers.map(o=>o.reportRow);
- const grandVals=(()=>{const sum=k=>details.reduce((a,r)=>a+n(r[k]),0);const scheduled=sum('scheduled'),delivered=sum('delivered'),docs=sum('docs'),heldLapsed=sum('heldLapsed'),disposal=sum('disposal');return ['GRAND TOTAL','',details.length,sum('generated'),sum('pendingGen'),scheduled,delivered,scheduled?delivered/scheduled*100:0,sum('pending'),heldLapsed,docs,delivered?docs/delivered*100:0,disposal,heldLapsed?disposal/heldLapsed*100:0]})();
+ const grandVals=(()=>{const sum=k=>details.reduce((a,r)=>a+n(r[k]),0);const scheduled=sum('scheduled'),delivered=sum('delivered'),docs=sum('docs'),heldLapsed=sum('heldLapsed'),disposal=sum('disposal');return ['GRAND TOTAL','',details.length,sum('generated'),scheduled,delivered,scheduled?delivered/scheduled*100:0,docs,delivered?docs/delivered*100:0,heldLapsed,disposal,heldLapsed?disposal/heldLapsed*100:0]})();
  return {officers,details,reportHeaders,reportRows,grandRow:grandVals,sourceCounts:{eci:eci.size,blo:blo.size,reference:ref.mapping.length}};
 }
 function parseLegacy(wb){return parseReference(wb)}
