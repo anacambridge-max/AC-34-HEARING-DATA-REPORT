@@ -4,51 +4,96 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const n=v=>Number.isFinite(Number(v))?Number(v):0,pct=v=>n(v).toFixed(1)+'%';
+const n=v=>Number.isFinite(Number(v))?Number(v):0;
+const pct=v=>n(v).toFixed(2)+'%';
+const rgb=(r,g,b)=>[r,g,b];
+const excelBlue=rgb(31,56,100), excelHeaderText=rgb(255,255,255), stripe=rgb(242,242,242), totalYellow=rgb(255,192,0);
+const red=rgb(248,105,107), yellow=rgb(255,235,132), green=rgb(99,190,123);
 
+function scaleColor(v){
+ const x=Math.max(0,Math.min(100,n(v)));
+ if(x<=50){const t=x/50;return rgb(Math.round(248+(255-248)*t),Math.round(105+(235-105)*t),Math.round(107+(132-107)*t))}
+ const t=(x-50)/50;return rgb(Math.round(255+(99-255)*t),Math.round(235+(190-235)*t),Math.round(132+(123-132)*t));
+}
 function parse(wb){
  const S=x=>wb.Sheets[x]?XLSX.utils.sheet_to_json(wb.Sheets[x],{header:1,defval:null}):[];
  const a=S('Officer Wise Report'),b=S('Officer Wise PS Detail'),m=S('PS Mapping'),h=S('Hearing Dates');
- const cols=wb.Sheets['Officer Wise Report']?.['!cols']||[];
+ const sheet=a, ws=wb.Sheets['Officer Wise Report'];
+ const cols=ws?.['!cols']||[];
  const headerIndex=Math.max(0,a.findIndex(r=>r?.some(v=>String(v??'').trim().toLowerCase()==='officer name')));
  const headers=a[headerIndex]||[];
  const visibleIndexes=headers.map((_,i)=>i).filter(i=>!cols[i]?.hidden && String(headers[i]??'').trim()!=='');
  const reportHeaders=visibleIndexes.map(i=>String(headers[i]));
- const reportRows=a.slice(headerIndex+1).filter(r=>r?.[1]).map(r=>visibleIndexes.map(i=>r[i]??''));
- const officers=a.slice(headerIndex+1).filter(r=>r?.[1]).map(r=>({sno:r[0],name:String(r[1]),ps:n(r[2]),generated:n(r[3]),pendingGen:n(r[4]),scheduled:n(r[5]),delivered:n(r[6]),deliveredPct:n(r[7]),pendingDelivery:n(r[8]),held:n(r[9]),lapsed:n(r[10]),reschedule:n(r[11]),deoPending:n(r[12]),deoGt5:n(r[13]),deoVerified:n(r[14]),docs:n(r[15])}));
+ const rawOfficerRows=a.slice(headerIndex+1).filter(r=>r?.[1]);
+ const reportRows=rawOfficerRows.filter(r=>String(r[0]).toUpperCase()!=='GRAND TOTAL').map(r=>visibleIndexes.map(i=>r[i]??''));
+ const grand=rawOfficerRows.find(r=>String(r[0]).toUpperCase()==='GRAND TOTAL');
+ const grandRow=grand?visibleIndexes.map(i=>grand[i]??''):null;
+ const officers=rawOfficerRows.filter(r=>String(r[0]).toUpperCase()!=='GRAND TOTAL').map(r=>({sno:r[0],name:String(r[1]),ps:n(r[2]),generated:n(r[3]),pendingGen:n(r[4]),scheduled:n(r[5]),delivered:n(r[6]),deliveredPct:n(r[7]),pendingDelivery:n(r[8]),held:n(r[9]),lapsed:n(r[10]),reschedule:n(r[11]),deoPending:n(r[12]),deoGt5:n(r[13]),deoVerified:n(r[14]),docs:n(r[15])}));
  const mm=new Map(m.slice(1).filter(r=>r?.[0]!=null).map(r=>[n(r[0]),{blo:r[2]||'',supervisor:r[3]||''}])),hh=new Map(h.slice(1).filter(r=>r?.[0]!=null).map(r=>[n(r[0]),{dates:r[4]||'',status:r[5]||''}]));
  let cur='',details=[];
  b.slice(2).forEach(r=>{if(!r||r[0]==null)return;if(r[1]==='OFFICER TOTAL'){cur=r[2]||'';return}if(typeof r[1]==='number'){const ps=n(r[1]);details.push({ps,officer:r[2]||cur,blo:r[3]||mm.get(ps)?.blo||'',supervisor:r[4]||mm.get(ps)?.supervisor||'',scheduled:n(r[8]),delivered:n(r[9]),pending:n(r[10]),deliveredPct:n(r[12]),docs:n(r[13]),docsPct:n(r[14]),...(hh.get(ps)||{})})}});
- return{officers,details,reportHeaders,reportRows};
+ return{officers,details,reportHeaders,reportRows,grandRow,visibleIndexes};
 }
 
-function officerPDF(o,headers,row){
+function reportPDF(title,headers,rows,grandRow){
  const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
- d.setFontSize(16);d.text('AC-34 MATIALA — SIR-2026',14,13);
- d.setFontSize(11);d.text('OFFICER WISE REPORT — '+o.name,14,20);
- autoTable(d,{startY:26,head:[headers],body:[row],styles:{fontSize:5.8,cellPadding:1.7,overflow:'linebreak'},headStyles:{fontSize:5.5},margin:{left:6,right:6}});
- d.save('AC34_Officer_'+o.name.replace(/[^A-Za-z0-9]+/g,'_')+'.pdf');
+ d.setFont('helvetica','bold');d.setFontSize(16);d.setTextColor(...excelBlue);d.text('AC-34 MATIALA — OFFICER WISE REPORT',148,13,{align:'center'});
+ d.setFontSize(10);d.text(title,148,20,{align:'center'});
+ const body=rows.map(r=>r.map(v=>String(v??'')));
+ if(grandRow) body.push(grandRow.map(v=>String(v??'')));
+ const totalIndex=grandRow?body.length-1:-1;
+ const hiddenCount=30-headers.length;
+ autoTable(d,{startY:26,head:[headers],body,theme:'grid',
+   styles:{font:'helvetica',fontSize:5.2,cellPadding:1.5,overflow:'linebreak',valign:'middle',lineColor:[190,190,190],lineWidth:.15,textColor:[0,0,0]},
+   headStyles:{fillColor:excelBlue,textColor:excelHeaderText,fontStyle:'bold,font',fontSize:5.2,halign:'center',valign:'middle'},
+   alternateRowStyles:{fillColor:stripe},
+   didParseCell:data=>{
+     if(data.section==='body' && data.row.index===totalIndex){data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold'}
+     const h=String(headers[data.column.index]||'');
+     if(data.section==='body' && ['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(h)){
+       const v=parseFloat(String(data.cell.raw).replace('%','')); if(Number.isFinite(v)) data.cell.styles.fillColor=scaleColor(v);
+     }
+   },
+   margin:{left:5,right:5,top:26,bottom:10},rowPageBreak:'avoid',
+   tableWidth:'auto'
+ });
+ d.save('AC34_'+title.replace(/[^A-Za-z0-9]+/g,'_')+'_Officer_Wise_Report.pdf');
 }
+
 function psPDF(o,rows){
  const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
- d.setFontSize(16);d.text('AC-34 MATIALA — SIR-2026',14,13);d.setFontSize(11);d.text('PS DETAIL — '+o.name,14,20);
- autoTable(d,{startY:26,head:[['PS','BLO','Supervisor','Scheduled','Delivered','Pending','% Delivered','Docs Uploaded','% Docs','Hearing','Date(s)']],body:rows.map(r=>[r.ps,r.blo,r.supervisor,r.scheduled,r.delivered,r.pending,pct(r.deliveredPct),r.docs,pct(r.docsPct),r.status||'—',r.dates||'—']),styles:{fontSize:6,cellPadding:1.4},headStyles:{fontSize:6.5},margin:{left:8,right:8}});
- d.save('AC34_'+o.name.replace(/[^A-Za-z0-9]+/g,'_')+'_PS.pdf');
+ d.setFont('helvetica','bold');d.setFontSize(16);d.setTextColor(...excelBlue);d.text('AC-34 MATIALA — OFFICER WISE PS REPORT',148,13,{align:'center'});
+ d.setFontSize(11);d.text(o.name,148,20,{align:'center'});
+ const headers=['PS','BLO','Supervisor','Scheduled','Delivered','Pending','% Delivered','Docs Uploaded','% Docs','Hearing','Date(s)'];
+ autoTable(d,{startY:26,head:[headers],body:rows.map(r=>[r.ps,r.blo,r.supervisor,r.scheduled,r.delivered,r.pending,pct(r.deliveredPct),r.docs,pct(r.docsPct),r.status||'—',r.dates||'—']),theme:'grid',
+ styles:{fontSize:6,cellPadding:1.5,overflow:'linebreak',valign:'middle',lineColor:[190,190,190],lineWidth:.15},
+ headStyles:{fillColor:excelBlue,textColor:excelHeaderText,fontStyle:'bold',halign:'center'},
+ alternateRowStyles:{fillColor:stripe},
+ didParseCell:data=>{if(data.section==='body' && (data.column.index===6||data.column.index===8)){const v=parseFloat(String(data.cell.raw));if(Number.isFinite(v))data.cell.styles.fillColor=scaleColor(v)}},
+ margin:{left:8,right:8,bottom:10}});
+ d.save('AC34_'+o.name.replace(/[^A-Za-z0-9]+/g,'_')+'_PS_Report.pdf');
 }
 
 export default function Page(){
  const[data,setData]=useState(null),[sel,setSel]=useState(''),[q,setQ]=useState(''),[file,setFile]=useState(''),[tab,setTab]=useState('dash'),[busy,setBusy]=useState(false);
  const officer=data?.officers.find(x=>x.name===sel)||data?.officers[0];
- const officerIndex=officer?data.officers.findIndex(x=>x.name===officer.name):-1;
+ const idx=officer?data.officers.findIndex(x=>x.name===officer.name):-1;
  const rows=useMemo(()=>data?.details.filter(x=>x.officer===officer?.name).filter(r=>String(r.ps).includes(q)||String(r.blo).toLowerCase().includes(q.toLowerCase())||String(r.supervisor).toLowerCase().includes(q.toLowerCase()))||[],[data,officer,q]);
- function upload(e){const f=e.target.files?.[0];if(!f)return;setBusy(true);setFile(f.name);f.arrayBuffer().then(b=>{const x=parse(XLSX.read(b,{type:'array',cellDates:true}));if(!x.officers.length)throw Error('Officer Wise Report sheet not found');setData(x);setSel(x.officers[0].name)}).catch(e=>alert(e.message)).finally(()=>{setBusy(false);e.target.value=''})}
+ function upload(e){const f=e.target.files?.[0];if(!f)return;setBusy(true);setFile(f.name);f.arrayBuffer().then(b=>{const x=parse(XLSX.read(b,{type:'array',cellDates:true}));if(!x.officers.length)throw Error('Officer Wise Report sheet not found');setData(x);setSel(x.officers[0].name);setQ('')}).catch(e=>alert(e.message||'Excel could not be read')).finally(()=>{setBusy(false);e.target.value=''})}
+ function downloadOfficerWise(o,i){reportPDF(o.name,data.reportHeaders,[data.reportRows[i]],null)}
+ function downloadAllOfficerWise(){data.officers.forEach((o,i)=>setTimeout(()=>downloadOfficerWise(o,i),i*500))}
+ function downloadConsolidated(){reportPDF('ALL 6 OFFICERS',data.reportHeaders,data.reportRows,data.grandRow)}
  return <main>
- <header className="topbar"><div><div className="eyebrow">SIR-2026 • AC-34 MATIALA</div><h1>Officer Command Dashboard</h1><p>Upload one updated Excel. Hidden Excel columns are automatically excluded.</p></div><label className="upload">{busy?'READING…':'UPLOAD UPDATED EXCEL'}<input type="file" accept=".xlsx,.xls" onChange={upload}/></label></header>
- {!data?<section className="empty"><h2>UPLOAD UPDATED EXCEL</h2><p>Start by uploading the latest report workbook.</p><label className="upload big">SELECT EXCEL FILE<input type="file" accept=".xlsx,.xls" onChange={upload}/></label></section>:<>
- <div className="filebar">CURRENT FILE: <b>{file}</b> • <b>{data.officers.length}</b> officers loaded</div>
- <nav className="tabs"><button className={tab==='dash'?'active':''} onClick={()=>setTab('dash')}>6 OFFICER DASHBOARDS</button><button className={tab==='report'?'active':''} onClick={()=>setTab('report')}>OFFICER WISE REPORT</button><button className="all" onClick={()=>data.officers.forEach((o,i)=>setTimeout(()=>{officerPDF(o,data.reportHeaders,data.reportRows[i]);psPDF(o,data.details.filter(r=>r.officer===o.name))},i*500))}>DOWNLOAD ALL PDF REPORTS</button></nav>
- {tab==='dash'?<><section className="officer-grid">{data.officers.map(o=><button key={o.name} className={'officer-card '+(officer.name===o.name?'active':'')} onClick={()=>{setSel(o.name);setQ('')}}><b>{o.name}</b><strong>{o.ps}</strong><small>PS</small><span>Delivered <em>{o.delivered}</em> • Docs <em>{o.docs}</em> • Held <em>{o.held}</em></span></button>)}</section><section className="summary">{[['Officer',officer.name],['PS',officer.ps],['Generated',officer.generated],['Scheduled',officer.scheduled],['Delivered',officer.delivered],['% Delivered',pct(officer.deliveredPct)],['Docs',officer.docs],['Hearings',officer.held]].map(x=><div key={x[0]}><small>{x[0]}</small><b>{x[1]}</b></div>)}<button className="download" onClick={()=>psPDF(officer,rows)}>DOWNLOAD PS PDF</button></section><section className="table-section"><div className="table-head"><div><h2>{officer.name} — PS DETAIL</h2><small>{rows.length} PS</small></div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search PS / BLO / Supervisor"/></div><div className="table-wrap"><table><thead><tr><th>PS</th><th>BLO</th><th>Supervisor</th><th>Scheduled</th><th>Delivered</th><th>Pending</th><th>% Delivered</th><th>Docs Uploaded</th><th>% Docs</th><th>Hearing</th><th>Date(s)</th></tr></thead><tbody>{rows.map(r=><tr key={r.ps}><td><b>{r.ps}</b></td><td>{r.blo}</td><td>{r.supervisor}</td><td>{r.scheduled}</td><td>{r.delivered}</td><td>{r.pending}</td><td><i className={'pill '+(r.deliveredPct>=80?'good':r.deliveredPct>=60?'mid':'low')}>{pct(r.deliveredPct)}</i></td><td>{r.docs}</td><td>{pct(r.docsPct)}</td><td>{r.status||'—'}</td><td>{r.dates||'—'}</td></tr>)}</tbody></table></div></section></>:<section className="table-section"><div className="report-head"><div><h2>OFFICER WISE REPORT — ALL 6 OFFICERS</h2><small>Only columns visible in the uploaded Excel are shown</small></div><button className="download" onClick={()=>data.officers.forEach((o,i)=>setTimeout(()=>officerPDF(o,data.reportHeaders,data.reportRows[i]),i*500))}>DOWNLOAD OFFICER WISE PDFs</button></div><div className="table-wrap"><table><thead><tr>{data.reportHeaders.map(x=><th key={x}>{x}</th>)}</tr></thead><tbody>{data.reportRows.map((r,i)=><tr key={i}>{r.map((v,j)=><td key={j}>{String(v??'')}</td>)}</tr>)}</tbody></table></div></section>}
+ <header className="topbar"><div><div className="eyebrow">SIR-2026 • AC-34 MATIALA</div><h1>Officer Command Dashboard</h1><p>Excel format preserved: hidden columns stay hidden, visible headings stay exactly as in Excel.</p></div><label className="upload">{busy?'READING…':'UPLOAD UPDATED EXCEL'}<input type="file" accept=".xlsx,.xls" onChange={upload}/></label></header>
+ {!data?<section className="empty"><h2>UPLOAD UPDATED EXCEL</h2><p>Upload the latest workbook. The app will use the workbook's hidden/visible columns automatically.</p><label className="upload big">SELECT EXCEL FILE<input type="file" accept=".xlsx,.xls" onChange={upload}/></label></section>:<>
+ <div className="filebar">CURRENT FILE: <b>{file}</b> • <b>{data.officers.length}</b> officers loaded • <b>{data.reportHeaders.length}</b> visible report columns</div>
+ <nav className="tabs"><button className={tab==='dash'?'active':''} onClick={()=>setTab('dash')}>6 OFFICER DASHBOARDS</button><button className={tab==='report'?'active':''} onClick={()=>setTab('report')}>OFFICER WISE REPORT</button><button className="all" onClick={()=>{downloadConsolidated();setTimeout(downloadAllOfficerWise,700)}}>DOWNLOAD ALL OFFICER PDFs</button></nav>
+ {tab==='dash'?<>
+ <section className="officer-grid">{data.officers.map((o,i)=><button key={o.name} className={'officer-card '+(officer.name===o.name?'active':'')} onClick={()=>{setSel(o.name);setQ('')}}><b>{o.name}</b><strong>{o.ps}</strong><small>PS</small><span>Delivered <em>{o.delivered}</em> • Docs <em>{o.docs}</em> • Held <em>{o.held}</em></span></button>)}</section>
+ <section className="summary">{[['Officer',officer.name],['PS',officer.ps],['Generated',officer.generated],['Scheduled',officer.scheduled],['Delivered',officer.delivered],['% Delivered',pct(officer.deliveredPct)],['Docs',officer.docs],['Hearings',officer.held]].map(x=><div key={x[0]}><small>{x[0]}</small><b>{x[1]}</b></div>)}<button className="download" onClick={()=>{psPDF(officer,rows);downloadOfficerWise(officer,idx)}}>DOWNLOAD OFFICER + PS PDFs</button></section>
+ <section className="table-section"><div className="table-head"><div><h2>{officer.name} — PS DETAIL</h2><small>{rows.length} PS</small></div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search PS / BLO / Supervisor"/></div><div className="table-wrap"><table><thead><tr><th>PS</th><th>BLO</th><th>Supervisor</th><th>Scheduled</th><th>Delivered</th><th>Pending</th><th>% Delivered</th><th>Docs Uploaded</th><th>% Docs</th><th>Hearing</th><th>Date(s)</th></tr></thead><tbody>{rows.map(r=><tr key={r.ps}><td><b>{r.ps}</b></td><td>{r.blo}</td><td>{r.supervisor}</td><td>{r.scheduled}</td><td>{r.delivered}</td><td>{r.pending}</td><td><i className={'pill '+(r.deliveredPct>=80?'good':r.deliveredPct>=60?'mid':'low')}>{pct(r.deliveredPct)}</i></td><td>{r.docs}</td><td>{pct(r.docsPct)}</td><td>{r.status||'—'}</td><td>{r.dates||'—'}</td></tr>)}</tbody></table></div></section>
+ </>:<section className="table-section"><div className="report-head"><div><h2>OFFICER WISE REPORT — ALL 6 OFFICERS</h2><small>Same visible headings, hidden columns excluded, Excel-style colours preserved</small></div><div className="report-actions"><button className="download" onClick={downloadConsolidated}>DOWNLOAD CONSOLIDATED PDF</button><button className="download" onClick={downloadAllOfficerWise}>DOWNLOAD 6 OFFICER PDFs</button></div></div><div className="table-wrap"><table><thead><tr>{data.reportHeaders.map(x=><th key={x}>{x}</th>)}</tr></thead><tbody>{data.reportRows.map((r,i)=><tr key={i}>{r.map((v,j)=>{const h=data.reportHeaders[j];const val=String(v??'');const isPct=['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(h);const numv=parseFloat(val);return <td key={j} style={isPct&&Number.isFinite(numv)?{background:'rgb('+scaleColor(numv).join(',')+')',fontWeight:700}:undefined}>{val}</td>})}</tr>)}{data.grandRow&&<tr className="grand">{data.grandRow.map((v,j)=><td key={j}>{String(v??'')}</td>)}</tr>}</tbody></table></div></section>}
  </>}
- <footer>Upload Excel → hidden columns excluded → dashboards → Officer Wise Report → PDFs.</footer>
+ <footer>Upload Excel → visible columns only → same report headings → same Excel-style colours → individual + consolidated PDFs.</footer>
  </main>
 }
