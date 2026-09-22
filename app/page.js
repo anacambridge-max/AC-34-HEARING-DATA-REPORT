@@ -24,30 +24,90 @@ function hearingDateStyle(status){
  if(s.includes('no hearing')) return {bg:[231,230,230],text:[89,89,89]};
  return null;
 }
-function parse(wb){
- const S=x=>wb.Sheets[x]?XLSX.utils.sheet_to_json(wb.Sheets[x],{header:1,defval:null}):[];
- const a=S('Officer Wise Report'),b=S('Officer Wise PS Detail'),m=S('PS Mapping'),h=S('Hearing Dates');
- const sheet=a, ws=wb.Sheets['Officer Wise Report'];
- const cols=ws?.['!cols']||[];
- const headerIndex=Math.max(0,a.findIndex(r=>r?.some(v=>String(v??'').trim().toLowerCase()==='officer name')));
- const headers=a[headerIndex]||[];
- const wantedHeaders=['S No','Officer Name','No. of PS','Notice Generated (NO MAP + ANOMALY)','Hearing Notice Scheduled NO MAPPING','NO MAP NOTICE DELIVERED','% NO MAPPING DELIVERED','Documents Uploaded by BLO','% Docs Uploaded (of Notice Delivered)','Hearing Held + Date Lapsed','Total Disposal','% Total Disposal'];
- const norm=s=>String(s??'').replace(/\\s+/g,' ').trim().toLowerCase();
- const visibleIndexes=wantedHeaders.map(w=>headers.findIndex(h=>norm(h)===norm(w))).filter(i=>i>=0);
- const reportHeaders=visibleIndexes.map(i=>String(headers[i]));
- const rawOfficerRows=a.slice(headerIndex+1).filter(r=>r?.some(v=>String(v??'').trim()!=='') );
- const isGrand=r=>r?.some(v=>String(v??'').trim().toUpperCase().replace(/\s+/g,' ')==='GRAND TOTAL');
- const officerRows=rawOfficerRows.filter(r=>!isGrand(r) && r?.[1]);
- const officerNameCol=headers.findIndex(h=>norm(h)==='officer name');
- const reportRows=officerRows.map(r=>visibleIndexes.map(i=>i===officerNameCol?cleanOfficerName(r[i]):(r[i]??'')));
- const grand=rawOfficerRows.find(isGrand);
- const grandRow=grand?visibleIndexes.map(i=>grand[i]??''):null;
- const officers=officerRows.map(r=>({sno:r[0],name:cleanOfficerName(r[1]),ps:n(r[2]),generated:n(r[3]),pendingGen:n(r[4]),scheduled:n(r[5]),delivered:n(r[6]),deliveredPct:n(r[7]),pendingDelivery:n(r[8]),held:n(r[9]),lapsed:n(r[10]),reschedule:n(r[11]),deoPending:n(r[12]),deoGt5:n(r[13]),deoVerified:n(r[14]),docs:n(r[15])}));
- const mm=new Map(m.slice(1).filter(r=>r?.[0]!=null).map(r=>[n(r[0]),{blo:r[2]||'',supervisor:r[3]||''}])),hh=new Map(h.slice(1).filter(r=>r?.[0]!=null).map(r=>[n(r[0]),{dates:r[4]||'',status:r[5]||''}]));
- let cur='',details=[];
- b.slice(2).forEach(r=>{if(!r||r[0]==null)return;if(r[1]==='OFFICER TOTAL'){cur=r[2]||'';return}if(typeof r[1]==='number'){const ps=n(r[1]);details.push({ps,officer:r[2]||cur,blo:r[3]||mm.get(ps)?.blo||'',supervisor:r[4]||mm.get(ps)?.supervisor||'',generated:n(r[6]),pendingGen:n(r[7]),scheduled:n(r[8]),delivered:n(r[9]),pending:n(r[10]),deliveredPct:n(r[12]),docs:n(r[13]),docsPct:n(r[14]),heldLapsed:n(r[17]),disposal:n(r[18]),disposalPct:n(r[19]),...(hh.get(ps)||{})})}});
- return{officers,details,reportHeaders,reportRows,grandRow,visibleIndexes};
+function rowsFor(wb,name){
+ const ws=wb.Sheets[name];
+ return ws?XLSX.utils.sheet_to_json(ws,{header:1,defval:null}):[];
 }
+function findHeader(rows,tests){
+ for(let i=0;i<Math.min(rows.length,20);i++){
+   const row=rows[i]||[];
+   const ok=tests.every(t=>row.some(v=>String(v??'').trim().toLowerCase()===t.toLowerCase()));
+   if(ok)return {index:i,row};
+ }
+ return {index:-1,row:[]};
+}
+function parseReference(wb){
+ const m=rowsFor(wb,'PS Mapping'),h=rowsFor(wb,'Hearing Dates');
+ if(!m.length||!h.length) throw Error('Reference workbook must contain PS Mapping and Hearing Dates sheets.');
+ const mr=m.slice(1).filter(r=>r?.[0]!=null).map(r=>[n(r[0]),String(r[1]??''),String(r[2]??''),String(r[3]??''),String(r[4]??'')]);
+ const hr=h.slice(1).filter(r=>r?.[0]!=null).map(r=>[n(r[0]),String(r[4]??''),String(r[5]??'')]);
+ let order=[];
+ const ow=rowsFor(wb,'Officer Wise Report');
+ const oi=Math.max(0,ow.findIndex(r=>r?.some(v=>String(v??'').trim().toLowerCase()==='officer name')));
+ if(oi>=0) order=ow.slice(oi+1).filter(r=>r?.[1]&&!String(r[1]).toUpperCase().includes('GRAND TOTAL')).map(r=>cleanOfficerName(r[1]));
+ const names=[...new Set(mr.map(r=>cleanOfficerName(r[1])))];
+ order=[...order,...names.filter(x=>!order.includes(x))];
+ return {mapping:mr,hearing:hr,officerOrder:order};
+}
+function parseECI(wb){
+ const names=['sirNoticeGenerate','ECI Raw Data','Part Wise Report'];
+ let rows=[];
+ for(const name of names){rows=rowsFor(wb,name);if(rows.length)break}
+ if(!rows.length)throw Error('ECI workbook: sirNoticeGenerate / ECI Raw Data sheet not found.');
+ const hi=rows.findIndex(r=>r?.some(v=>String(v??'').trim().toLowerCase()==='part no'));
+ if(hi<0)throw Error('ECI workbook: Part No column not found.');
+ const head=rows[hi].map(v=>String(v??'').trim());
+ const ix=key=>head.findIndex(v=>v.toLowerCase()===key.toLowerCase());
+ const p=ix('Part No'),gen=ix('Notice Generated'),pg=ix('Pending for Notice Generation'),del=ix('Notice Delivered'),pend=ix('Notice Pending Delivery'),held=ix('Hearings Held'),lapsed=ix('Hearing Date Lapsed');
+ if([p,gen,pg,del,pend,held,lapsed].some(x=>x<0))throw Error('ECI workbook is missing one or more required columns.');
+ const out=new Map();
+ rows.slice(hi+1).forEach(r=>{
+   const ps=n(r[p]);if(!ps)return;
+   out.set(ps,{ps,generated:n(r[gen]),pendingGen:n(r[pg]),delivered:n(r[del]),pending:n(r[pend]),held:n(r[held]),lapsed:n(r[lapsed])});
+ });
+ if(out.size<400)throw Error('ECI workbook appears incomplete: fewer than 400 PS records found.');
+ return out;
+}
+function parseBLO(wb){
+ const names=['PS Wise Report','BLO Documents Raw Data','BLO Documents','Documents Uploaded by BLO'];
+ let rows=[];
+ for(const name of names){rows=rowsFor(wb,name);if(rows.length)break}
+ if(!rows.length)throw Error('BLO workbook: PS Wise Report / BLO Documents Raw Data sheet not found.');
+ const hi=rows.findIndex(r=>r?.some(v=>String(v??'').trim().toLowerCase()==='ps no.'));
+ if(hi<0)throw Error('BLO workbook: PS No. column not found.');
+ const head=rows[hi].map(v=>String(v??'').trim().toLowerCase());
+ const find=(...keys)=>head.findIndex(v=>keys.some(k=>v===k.toLowerCase()));
+ const p=find('ps no.','ps no','part no'),sch=find('hearing notice scheduled'),docs=find('documents uploaded by blo');
+ if(p<0||sch<0||docs<0)throw Error('BLO workbook must contain PS No., Hearing Notice Scheduled and Documents Uploaded by BLO.');
+ const out=new Map();
+ rows.slice(hi+1).forEach(r=>{const ps=n(r[p]);if(ps)out.set(ps,{ps,scheduled:n(r[sch]),docs:n(r[docs])})});
+ if(out.size<400)throw Error('BLO workbook appears incomplete: fewer than 400 PS records found.');
+ return out;
+}
+function buildData(ref,eci,blo){
+ const hm=new Map(ref.hearing.map(r=>[n(r[0]),{dates:r[1]||'',status:r[2]||''}]));
+ const mm=new Map(ref.mapping.map(r=>[n(r[0]),{officer:r[1]||'',blo:r[2]||'',supervisor:r[3]||'',centre:r[4]||''}]));
+ const names=ref.officerOrder.length?ref.officerOrder:[...new Set(ref.mapping.map(r=>cleanOfficerName(r[1])))];
+ const details=ref.mapping.map(r=>{
+   const ps=n(r[0]),map=mm.get(ps)||{},e=eci.get(ps)||{},b=blo.get(ps)||{},h=hm.get(ps)||{};
+   const delivered=n(e.delivered),scheduled=n(b.scheduled),docs=n(b.docs),held=n(e.held),lapsed=n(e.lapsed);
+   return {ps,officer:map.officer,blo:map.blo,supervisor:map.supervisor,centre:map.centre,generated:n(e.generated),pendingGen:n(e.pendingGen),scheduled,delivered,pending:n(e.pending),deliveredPct:scheduled?delivered/scheduled*100:0,docs,docsPct:delivered?docs/delivered*100:0,dates:h.dates||'',status:h.status||'',heldLapsed:held+lapsed,disposal:held,disposalPct:(held+lapsed)?held/(held+lapsed)*100:0};
+ });
+ const wanted=['S No','Officer Name','No. of PS','Notice Generated (NO MAP + ANOMALY)','Hearing Notice Scheduled NO MAPPING','NO MAP NOTICE DELIVERED','% NO MAPPING DELIVERED','Documents Uploaded by BLO','% Docs Uploaded (of Notice Delivered)','Hearing Held + Date Lapsed','Total Disposal','% Total Disposal'];
+ const officers=names.map((name,i)=>{
+   const rr=details.filter(r=>cleanOfficerName(r.officer)===cleanOfficerName(name));
+   const sum=k=>rr.reduce((a,r)=>a+n(r[k]),0);
+   const scheduled=sum('scheduled'),delivered=sum('delivered'),docs=sum('docs'),heldLapsed=sum('heldLapsed'),disposal=sum('disposal');
+   const row=[i+1,name,rr.length,sum('generated'),sum('pendingGen'),scheduled,delivered,scheduled?delivered/scheduled*100:0, sum('pending'),heldLapsed,docs,delivered?docs/delivered*100:0,disposal,heldLapsed?disposal/heldLapsed*100:0];
+   return {sno:i+1,name:cleanOfficerName(name),ps:rr.length,generated:sum('generated'),pendingGen:sum('pendingGen'),scheduled,delivered,deliveredPct:scheduled?delivered/scheduled*100:0,pendingDelivery:sum('pending'),held:disposal,lapsed:heldLapsed-disposal,docs,reportRow:row};
+ });
+ const reportHeaders=wanted;
+ const reportRows=officers.map(o=>o.reportRow);
+ const grandVals=(()=>{const sum=k=>details.reduce((a,r)=>a+n(r[k]),0);const scheduled=sum('scheduled'),delivered=sum('delivered'),docs=sum('docs'),heldLapsed=sum('heldLapsed'),disposal=sum('disposal');return ['GRAND TOTAL','',details.length,sum('generated'),sum('pendingGen'),scheduled,delivered,scheduled?delivered/scheduled*100:0,sum('pending'),heldLapsed,docs,delivered?docs/delivered*100:0,disposal,heldLapsed?disposal/heldLapsed*100:0]})();
+ return {officers,details,reportHeaders,reportRows,grandRow:grandVals,sourceCounts:{eci:eci.size,blo:blo.size,reference:ref.mapping.length}};
+}
+function parseLegacy(wb){return parseReference(wb)}
+
 
 function reportPDF(title,headers,rows,grandRow,psRows=[]){
  const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a3'});
@@ -147,7 +207,7 @@ function psPDF(o,rows){
  d.save('AC34_'+cleanOfficerName(o.name).replace(/[^A-Za-z0-9]+/g,'_')+'_PS_Detail_'+Date.now()+'.pdf');
 }
 export default function Page(){
- const[data,setData]=useState(null),[sel,setSel]=useState(''),[q,setQ]=useState(''),[file,setFile]=useState(''),[tab,setTab]=useState('dash'),[busy,setBusy]=useState(false);
+ const[data,setData]=useState(null),[sel,setSel]=useState(''),[q,setQ]=useState(''),[file,setFile]=useState(''),[tab,setTab]=useState('dash'),[busy,setBusy]=useState(false),[reference,setReference]=useState(null),[eci,setEci]=useState(null),[blo,setBlo]=useState(null),[refFile,setRefFile]=useState(''),[eciFile,setEciFile]=useState(''),[bloFile,setBloFile]=useState('');
  const reportWrap=useRef(null);
  useEffect(()=>{if(tab==='report'&&reportWrap.current) reportWrap.current.scrollLeft=0},[tab,data]);
  const officer=data?.officers.find(x=>x.name===sel)||data?.officers[0];
@@ -155,14 +215,34 @@ export default function Page(){
  const normName=s=>cleanOfficerName(s).toLowerCase();
  const allOfficerRows=useMemo(()=>data?.details.filter(x=>normName(x.officer)===normName(officer?.name))||[],[data,officer]);
  const rows=useMemo(()=>allOfficerRows.filter(r=>String(r.ps).includes(q)||String(r.blo).toLowerCase().includes(q.toLowerCase())||String(r.supervisor).toLowerCase().includes(q.toLowerCase())),[allOfficerRows,q]);
- function upload(e){const f=e.target.files?.[0];if(!f)return;setBusy(true);setFile(f.name);f.arrayBuffer().then(b=>{const x=parse(XLSX.read(b,{type:'array',cellDates:true}));if(!x.officers.length)throw Error('Officer Wise Report sheet not found');setData(x);setSel(x.officers[0].name);setQ('')}).catch(e=>alert(e.message||'Excel could not be read')).finally(()=>{setBusy(false);e.target.value=''})}
+ useEffect(()=>{try{const s=localStorage.getItem('ac34_reference_v1');if(s)setReference(JSON.parse(s))}catch{}},[]);
+useEffect(()=>{if(reference&&eci&&blo){const x=buildData(reference,eci,blo);setData(x);setSel(x.officers[0]?.name||'');setQ('');}},[reference,eci,blo]);
+function readFile(f,kind){
+ if(!f)return;setBusy(true);
+ f.arrayBuffer().then(b=>XLSX.read(b,{type:'array',cellDates:true})).then(wb=>{
+   if(kind==='reference'){const r=parseReference(wb);setReference(r);localStorage.setItem('ac34_reference_v1',JSON.stringify(r));setRefFile(f.name)}
+   if(kind==='eci'){setEci(parseECI(wb));setEciFile(f.name)}
+   if(kind==='blo'){setBlo(parseBLO(wb));setBloFile(f.name)}
+ }).catch(err=>alert(err.message||'Excel could not be read')).finally(()=>{setBusy(false)});
+}
+function uploadLegacy(e){const f=e.target.files?.[0];if(!f)return;readFile(f,'reference');e.target.value=''}
+function uploadSource(e,kind){const f=e.target.files?.[0];if(!f)return;readFile(f,kind);e.target.value=''}
+
  function downloadOfficerWise(o,i){reportPDF(cleanOfficerName(o.name),data.reportHeaders,[data.reportRows[i]],null,allOfficerRows)}
  function downloadAllOfficerWise(){data.officers.forEach((o,i)=>setTimeout(()=>{const rr=data.details.filter(x=>normName(x.officer)===normName(o.name));reportPDF(cleanOfficerName(o.name),data.reportHeaders,[data.reportRows[i]],null,rr)},i*500))}
  function downloadConsolidated(){reportPDF('ALL 6 OFFICERS',data.reportHeaders,data.reportRows,data.grandRow)}
  return <main>
- <header className="topbar"><div><div className="eyebrow">SIR-2026 • AC-34 MATIALA</div><h1>Officer Command Dashboard</h1><p>Excel format preserved: hidden columns stay hidden, visible headings stay exactly as in Excel.</p></div><label className="upload">{busy?'READING…':'UPLOAD UPDATED EXCEL'}<input type="file" accept=".xlsx,.xls" onChange={upload}/></label></header>
- {!data?<section className="empty"><h2>UPLOAD UPDATED EXCEL</h2><p>Upload the latest workbook. The app will use the workbook's hidden/visible columns automatically.</p><label className="upload big">SELECT EXCEL FILE<input type="file" accept=".xlsx,.xls" onChange={upload}/></label></section>:<>
- <div className="filebar">CURRENT FILE: <b>{file}</b> • <b>{data.officers.length}</b> officers loaded • <b>{data.reportHeaders.length}</b> visible report columns</div>
+ <header className="topbar"><div><div className="eyebrow">SIR-2026 • AC-34 MATIALA</div><h1>Officer Command Dashboard</h1><p>Upload the ECI report and BLO Documents report. Existing PS mapping and Hearing Dates are preserved.</p></div><div className="source-actions">
+<label className="upload">{busy?'READING…':'1. REFERENCE / HEARING DATA'}<input type="file" accept=".xlsx,.xls" onChange={uploadLegacy}/></label>
+<label className="upload">{busy?'READING…':'2. UPLOAD ECI UPDATED'}<input type="file" accept=".xlsx,.xls" onChange={e=>uploadSource(e,'eci')}/></label>
+<label className="upload">{busy?'READING…':'3. UPLOAD BLO DOCUMENTS'}<input type="file" accept=".xlsx,.xls" onChange={e=>uploadSource(e,'blo')}/></label>
+</div></header>
+ {!data?<section className="empty"><h2>LOAD THE 3 DATA SOURCES</h2><p>Reference is needed once to retain PS/BLO/Supervisor mapping and Hearing Dates. After that, routine updates require only the latest ECI file and BLO Documents file.</p><div className="setup-grid">
+<label className="upload big">1. REFERENCE / HEARING DATA<input type="file" accept=".xlsx,.xls" onChange={uploadLegacy}/></label>
+<label className="upload big">2. ECI UPDATED FILE<input type="file" accept=".xlsx,.xls" onChange={e=>uploadSource(e,'eci')}/></label>
+<label className="upload big">3. BLO DOCUMENTS FILE<input type="file" accept=".xlsx,.xls" onChange={e=>uploadSource(e,'blo')}/></label>
+</div><div className="status-box"><b>Reference:</b> {refFile|| (reference?'Saved in this browser':'Not loaded')} &nbsp; • &nbsp; <b>ECI:</b> {eciFile||'Not loaded'} &nbsp; • &nbsp; <b>BLO:</b> {bloFile||'Not loaded'}</div></section>:<>
+ <div className="filebar">ECI: <b>{eciFile||'—'}</b> • BLO DOCUMENTS: <b>{bloFile||'—'}</b> • REFERENCE: <b>{refFile||'saved reference'}</b> • <b>{data.officers.length}</b> officers • <b>{data.details.length}</b> PS updated</div>
  <nav className="tabs"><button className={tab==='dash'?'active':''} onClick={()=>setTab('dash')}>6 OFFICER DASHBOARDS</button><button className={tab==='report'?'active':''} onClick={()=>setTab('report')}>OFFICER WISE REPORT</button></nav>
  {tab==='dash'?<>
  <section className="officer-grid">{data.officers.map((o,i)=><button key={o.name} className={'officer-card '+(officer.name===o.name?'active':'')} onClick={()=>{setSel(o.name);setQ('')}}><b>{o.name}</b><strong>{o.ps}</strong><small>PS</small></button>)}</section>
