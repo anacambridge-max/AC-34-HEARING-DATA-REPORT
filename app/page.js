@@ -41,31 +41,96 @@ function parse(wb){
 
 function reportPDF(title,headers,rows,grandRow){
  const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
- d.setFont('helvetica','bold');d.setFontSize(16);d.setTextColor(...excelBlue);d.text('AC-34 MATIALA — OFFICER WISE REPORT',148,13,{align:'center'});
- d.setFontSize(10);d.text(title,148,20,{align:'center'});
+ d.setFont('helvetica','bold');
+ d.setTextColor(...excelBlue);
+ d.setFontSize(17);
+ d.text('AC-34 MATIALA — OFFICER WISE REPORT',148,13,{align:'center'});
+ d.setFontSize(11);
+ d.text(title,148,21,{align:'center'});
+ d.setFontSize(8);
+ d.setTextColor(80,80,80);
+ d.text('SIR-2026 • Officer-wise monitoring report',148,26,{align:'center'});
+
  const isPctHeader=h=>['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(h);
- const fmt=(v,i)=>isPctHeader(String(headers[i]||'')&&String(headers[i]))&&Number.isFinite(parseFloat(String(v)))?parseFloat(String(v)).toFixed(2):String(v??'');
+ const fmt=(v,i)=>{
+   const h=String(headers[i]||'');
+   const num=parseFloat(String(v??''));
+   return isPctHeader(h)&&Number.isFinite(num)?num.toFixed(2):String(v??'');
+ };
  const body=rows.map(r=>r.map((v,i)=>fmt(v,i)));
  if(grandRow) body.push(grandRow.map((v,i)=>fmt(v,i)));
  const totalIndex=grandRow?body.length-1:-1;
- const hiddenCount=30-headers.length;
- autoTable(d,{startY:26,head:[headers],body,theme:'grid',
-   styles:{font:'helvetica',fontSize:5.2,cellPadding:1.5,overflow:'linebreak',valign:'middle',lineColor:[190,190,190],lineWidth:.15,textColor:[0,0,0]},
-   headStyles:{fillColor:excelBlue,textColor:excelHeaderText,fontStyle:'bold',fontSize:5.2,halign:'center',valign:'middle'},
-   alternateRowStyles:{fillColor:stripe},
+
+ autoTable(d,{
+   startY:31,
+   head:[headers],
+   body,
+   theme:'grid',
+   tableWidth:'wrap',
+   columnStyles:{
+     0:{cellWidth:10},
+     1:{cellWidth:42},
+     2:{cellWidth:13},
+     3:{cellWidth:25},
+     4:{cellWidth:25},
+     5:{cellWidth:22},
+     6:{cellWidth:21},
+     7:{cellWidth:24},
+     8:{cellWidth:31},
+     9:{cellWidth:25},
+     10:{cellWidth:18},
+     11:{cellWidth:20}
+   },
+   styles:{
+     font:'helvetica',
+     fontSize:7.1,
+     fontStyle:'bold',
+     cellPadding:{top:3.2,right:2.2,bottom:3.2,left:2.2},
+     overflow:'linebreak',
+     valign:'middle',
+     halign:'center',
+     lineColor:[120,120,120],
+     lineWidth:.25,
+     textColor:[20,20,20],
+     minCellHeight:12
+   },
+   headStyles:{
+     fillColor:excelBlue,
+     textColor:excelHeaderText,
+     font:'helvetica',
+     fontStyle:'bold',
+     fontSize:7.2,
+     cellPadding:{top:4.5,right:2.2,bottom:4.5,left:2.2},
+     halign:'center',
+     valign:'middle',
+     overflow:'linebreak',
+     minCellHeight:25
+   },
+   alternateRowStyles:{fillColor:[242,242,242]},
    didParseCell:data=>{
-     if(data.section==='body' && data.row.index===totalIndex){data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold'}
+     if(data.section==='body' && data.row.index===totalIndex){
+       data.cell.styles.fillColor=totalYellow;
+       data.cell.styles.fontStyle='bold';
+       data.cell.styles.fontSize=7.3;
+     }
      const h=String(headers[data.column.index]||'');
-     if(data.section==='body' && ['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(h)){
-       const v=parseFloat(String(data.cell.raw).replace('%','')); if(Number.isFinite(v)) data.cell.styles.fillColor=scaleColor(v);
+     if(data.section==='body' && isPctHeader(h)){
+       const v=parseFloat(String(data.cell.raw).replace('%',''));
+       if(Number.isFinite(v)) data.cell.styles.fillColor=scaleColor(v);
      }
    },
-   margin:{left:5,right:5,top:26,bottom:10},rowPageBreak:'avoid',
-   tableWidth:'auto'
+   didDrawPage:data=>{
+     d.setFont('helvetica','normal');
+     d.setFontSize(6.5);
+     d.setTextColor(100,100,100);
+     d.text('AC-34 MATIALA • SIR-2026',8,204);
+     d.text('Page '+d.internal.getNumberOfPages(),289,204,{align:'right'});
+   },
+   margin:{left:5,right:5,top:31,bottom:12},
+   rowPageBreak:'avoid'
  });
  d.save('AC34_'+title.replace(/[^A-Za-z0-9]+/g,'_')+'_Officer_Wise_Report.pdf');
 }
-
 function psPDF(o,rows){
  const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
  d.setFont('helvetica','bold');d.setFontSize(16);d.setTextColor(...excelBlue);d.text('AC-34 MATIALA — OFFICER WISE PS REPORT',148,13,{align:'center'});
