@@ -56,7 +56,7 @@ function reportPDF(title,headers,rows,grandRow){
  headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:7.2,cellPadding:{top:4.5,right:2.2,bottom:4.5,left:2.2},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:25},
  alternateRowStyles:{fillColor:[242,242,242]},
  didParseCell:data=>{
-   if(data.section==='body'&&data.row.index===totalIndex){data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold';data.cell.styles.fontSize=7.3}
+   if(data.section==='body'&&data.row.index===totalIndex){data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold';data.cell.styles.fontSize=7.3;if(data.column.index===0||data.column.index===1)data.cell.styles.lineWidth=0}
    const h=String(headers[data.column.index]||'');
    if(data.section==='body'&&isPctHeader(h)){const v=parseFloat(String(data.cell.raw).replace('%',''));if(Number.isFinite(v))data.cell.styles.fillColor=scaleColor(v)}
    if(data.section==='body'&&data.row.index===totalIndex&&data.column.index===1){data.cell.text=[];data.cell.styles.fillColor=totalYellow}
