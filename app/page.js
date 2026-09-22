@@ -43,8 +43,10 @@ function reportPDF(title,headers,rows,grandRow){
  const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
  d.setFont('helvetica','bold');d.setFontSize(16);d.setTextColor(...excelBlue);d.text('AC-34 MATIALA — OFFICER WISE REPORT',148,13,{align:'center'});
  d.setFontSize(10);d.text(title,148,20,{align:'center'});
- const body=rows.map(r=>r.map(v=>String(v??'')));
- if(grandRow) body.push(grandRow.map(v=>String(v??'')));
+ const isPctHeader=h=>['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(h);
+ const fmt=(v,i)=>isPctHeader(String(headers[i]||'')&&String(headers[i]))&&Number.isFinite(parseFloat(String(v)))?parseFloat(String(v)).toFixed(2):String(v??'');
+ const body=rows.map(r=>r.map((v,i)=>fmt(v,i)));
+ if(grandRow) body.push(grandRow.map((v,i)=>fmt(v,i)));
  const totalIndex=grandRow?body.length-1:-1;
  const hiddenCount=30-headers.length;
  autoTable(d,{startY:26,head:[headers],body,theme:'grid',
