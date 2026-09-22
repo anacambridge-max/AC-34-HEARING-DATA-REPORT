@@ -42,7 +42,7 @@ function parse(wb){
 }
 
 function reportPDF(title,headers,rows,grandRow,psRows=[]){
- const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a3'});
+ const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a2'});
  const generatedAt=new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
  d.setFont('helvetica','bold');d.setTextColor(...excelBlue);d.setFontSize(17);
  d.text('AC-34 MATIALA — OFFICER WISE REPORT',210,13,{align:'center'});
@@ -78,7 +78,7 @@ function reportPDF(title,headers,rows,grandRow,psRows=[]){
        if(Number.isFinite(v)){d.setFillColor(...scaleColor(v));d.rect(data.cell.x,data.cell.y,data.cell.width,data.cell.height,'F');d.setTextColor(20,20,20);d.setFont('helvetica','bold');d.setFontSize(7.2);d.text(fmt(data.cell.raw,data.column.index),data.cell.x+data.cell.width/2,data.cell.y+data.cell.height/2+2,{align:'center'});}
      }
    },
-   didDrawPage:()=>{d.setFont('helvetica','normal');d.setFontSize(6.5);d.setTextColor(100,100,100);d.text('AC-34 MATIALA • SIR-2026',8,285);d.text('Generated: '+generatedAt,210,285,{align:'center'});d.text('Page '+d.internal.getNumberOfPages(),412,285,{align:'right'})},
+   didDrawPage:()=>{d.setFont('helvetica','normal');d.setFontSize(8);d.setTextColor(100,100,100);d.text('AC-34 MATIALA • SIR-2026',10,410);d.text('Generated: '+generatedAt,297,410,{align:'center'});d.text('Page '+d.internal.getNumberOfPages(),584,410,{align:'right'})},
    margin:{left:5,right:5,top:31,bottom:12},rowPageBreak:'avoid',pageBreak:'auto'
  });
  
@@ -106,27 +106,27 @@ function reportPDF(title,headers,rows,grandRow,psRows=[]){
 function psPDF(o,rows){
  const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a3'});
  const generatedAt=new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
- d.setFont('helvetica','bold');d.setTextColor(...excelBlue);d.setFontSize(18);
- d.text('AC-34 MATIALA — OFFICER WISE PS DETAIL',210,14,{align:'center'});
- d.setFontSize(12);d.text(cleanOfficerName(o.name),210,22,{align:'center'});
- d.setFontSize(8);d.setTextColor(80,80,80);d.text('SIR-2026 • Complete PS-wise report',210,27,{align:'center'});
- d.setFontSize(7.5);d.text('Report Generated: '+generatedAt,405,27,{align:'right'});
+ d.setFont('helvetica','bold');d.setTextColor(...excelBlue);d.setFontSize(20);
+ d.text('AC-34 MATIALA — OFFICER WISE PS DETAIL',297,16,{align:'center'});
+ d.setFontSize(13);d.text(cleanOfficerName(o.name),297,25,{align:'center'});
+ d.setFontSize(9);d.setTextColor(80,80,80);d.text('SIR-2026 • Complete PS-wise report',297,31,{align:'center'});
+ d.setFontSize(8);d.text('Report Generated: '+generatedAt,570,31,{align:'right'});
  const headers=['S No','Part No','Officer Name','BLO Name','BLO Supervisor Name','Notice Generated (NO MAP + ANOMALY)','Hearing Notice Scheduled NO MAPPING','Notice Delivered','Notice Pending Delivery','% NO MAPPING NOTICE DELIVERED','Documents Uploaded by BLO','% DOCS UPLOADED (of NOTICE DELIVERED)','Hearing Date(s)','Hearing Held + Date Lapsed','Total Disposal','% Total Disposal'];
  const body=rows.map((r,i)=>[i+1,r.ps,cleanOfficerName(r.officer||o.name),r.blo,r.supervisor,r.generated||'',r.scheduled,r.delivered,r.pending,pct(r.deliveredPct),r.docs,pct(r.docsPct),r.dates||'—',r.heldLapsed||0,r.disposal||0,pct(r.disposalPct)]);
  body.push(['','','OFFICER TOTAL','','',rows.reduce((a,r)=>a+n(r.generated),0),rows.reduce((a,r)=>a+n(r.scheduled),0),rows.reduce((a,r)=>a+n(r.delivered),0),rows.reduce((a,r)=>a+n(r.pending),0),'',rows.reduce((a,r)=>a+n(r.docs),0),'','',rows.reduce((a,r)=>a+n(r.heldLapsed),0),rows.reduce((a,r)=>a+n(r.disposal),0),'']);
  const totalIndex=body.length-1;
- const widths=[9,10,32,36,37,25,23,25,19,23,22,22,25,24,25,17,19];
- autoTable(d,{startY:32,head:[headers],body,theme:'grid',tableWidth:'wrap',
+ const widths=[12,13,40,45,46,32,30,32,27,30,29,30,32,31,31,24,22];
+ autoTable(d,{startY:37,head:[headers],body,theme:'grid',tableWidth:'wrap',
  columnStyles:Object.fromEntries(widths.map((w,i)=>[i,{cellWidth:w}])),
- styles:{font:'helvetica',fontSize:7.2,fontStyle:'bold',cellPadding:{top:2.5,right:1.5,bottom:2.5,left:1.5},overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.35,textColor:[20,20,20],minCellHeight:12},
- headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:7.0,cellPadding:{top:4,right:1.2,bottom:4,left:1.2},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:24},
+ styles:{font:'helvetica',fontSize:8.5,fontStyle:'bold',cellPadding:{top:2.5,right:1.5,bottom:2.5,left:1.5},overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.35,textColor:[20,20,20],minCellHeight:12},
+ headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:8.2,cellPadding:{top:5,right:1.5,bottom:5,left:1.5},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:28},
  alternateRowStyles:{fillColor:stripe},
  didParseCell:data=>{
    if(data.section==='body'&&data.row.index===totalIndex){data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold'}
    if(data.section==='body'&&[9,11,15].includes(data.column.index)){const v=parseFloat(String(data.cell.raw));if(Number.isFinite(v))data.cell.styles.fillColor=scaleColor(v)}
  },
  didDrawPage:()=>{d.setFont('helvetica','normal');d.setFontSize(6.5);d.setTextColor(100,100,100);d.text('AC-34 MATIALA • SIR-2026',8,285);d.text('Generated: '+generatedAt,210,285,{align:'center'});d.text('Page '+d.internal.getNumberOfPages(),412,285,{align:'right'})},
- margin:{left:5,right:5,top:32,bottom:12},rowPageBreak:'avoid'
+ margin:{left:8,right:8,top:37,bottom:16},rowPageBreak:'avoid'
  });
  d.save('AC34_'+cleanOfficerName(o.name).replace(/[^A-Za-z0-9]+/g,'_')+'_PS_Detail_'+Date.now()+'.pdf');
 }
