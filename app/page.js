@@ -106,11 +106,11 @@ function reportPDF(title,headers,rows,grandRow,psRows=[]){
 function psPDF(o,rows){
  const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a3'});
  const generatedAt=new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
- d.setFont('helvetica','bold');d.setTextColor(...excelBlue);d.setFontSize(24);
- d.text('AC-34 MATIALA — OFFICER WISE PS DETAIL',420,18,{align:'center'});
- d.setFontSize(16);d.text(cleanOfficerName(o.name),420,28,{align:'center'});
- d.setFontSize(11);d.setTextColor(80,80,80);d.text('SIR-2026 • Complete PS-wise report',420,35,{align:'center'});
- d.setFontSize(10);d.text('Report Generated: '+generatedAt,830,35,{align:'right'});
+ d.setFont('helvetica','bold');d.setTextColor(...excelBlue);d.setFontSize(16);
+ d.text('AC-34 MATIALA — OFFICER WISE PS DETAIL',148,14,{align:'center'});
+ d.setFontSize(11);d.text(cleanOfficerName(o.name),148,21,{align:'center'});
+ d.setFontSize(7.5);d.setTextColor(80,80,80);d.text('SIR-2026 • Complete PS-wise report',148,26,{align:'center'});
+ d.setFontSize(7.5);d.text('Report Generated: '+generatedAt,291,26,{align:'right'});
  const headers=['S No','Part No','Officer Name','BLO Name','BLO Supervisor Name','Notice Generated (NO MAP + ANOMALY)','Hearing Notice Scheduled NO MAPPING','Notice Delivered','Notice Pending Delivery','% NO MAPPING NOTICE DELIVERED','Documents Uploaded by BLO','% DOCS UPLOADED (of NOTICE DELIVERED)','Hearing Date(s)','Hearing Held + Date Lapsed','Total Disposal','% Total Disposal'];
  const body=rows.map((r,i)=>[i+1,r.ps,cleanOfficerName(r.officer||o.name),r.blo,r.supervisor,r.generated||'',r.scheduled,r.delivered,r.pending,pct(r.deliveredPct),r.docs,pct(r.docsPct),r.dates||'—',r.heldLapsed||0,r.disposal||0,pct(r.disposalPct)]);
  body.push(['','','OFFICER TOTAL','','',rows.reduce((a,r)=>a+n(r.generated),0),rows.reduce((a,r)=>a+n(r.scheduled),0),rows.reduce((a,r)=>a+n(r.delivered),0),rows.reduce((a,r)=>a+n(r.pending),0),'',rows.reduce((a,r)=>a+n(r.docs),0),'','',rows.reduce((a,r)=>a+n(r.heldLapsed),0),rows.reduce((a,r)=>a+n(r.disposal),0),'']);
