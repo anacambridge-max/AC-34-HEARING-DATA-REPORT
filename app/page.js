@@ -42,13 +42,13 @@ function parse(wb){
 }
 
 function reportPDF(title,headers,rows,grandRow,psRows=[]){
- const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+ const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a3'});
  const generatedAt=new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
  d.setFont('helvetica','bold');d.setTextColor(...excelBlue);d.setFontSize(17);
- d.text('AC-34 MATIALA — OFFICER WISE REPORT',148,13,{align:'center'});
- d.setFontSize(11);d.text(title,148,21,{align:'center'});
- d.setFontSize(8);d.setTextColor(80,80,80);d.text('SIR-2026 • Officer-wise monitoring report',148,26,{align:'center'});
- d.setFontSize(7.5);d.text('Report Generated: '+generatedAt,291,26,{align:'right'});
+ d.text('AC-34 MATIALA — OFFICER WISE REPORT',210,13,{align:'center'});
+ d.setFontSize(11);d.text(title,210,21,{align:'center'});
+ d.setFontSize(8);d.setTextColor(80,80,80);d.text('SIR-2026 • Officer-wise monitoring report',210,26,{align:'center'});
+ d.setFontSize(7.5);d.text('Report Generated: '+generatedAt,412,26,{align:'right'});
  const isPctHeader=h=>['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(String(h||'').trim());
  const fmt=(v,i)=>{const num=parseFloat(String(v??''));return isPctHeader(headers[i])&&Number.isFinite(num)?num.toFixed(2):String(v??'')};
  let body=rows.map(r=>r.map((v,i)=>fmt(v,i)));
@@ -78,8 +78,8 @@ function reportPDF(title,headers,rows,grandRow,psRows=[]){
        if(Number.isFinite(v)){d.setFillColor(...scaleColor(v));d.rect(data.cell.x,data.cell.y,data.cell.width,data.cell.height,'F');d.setTextColor(20,20,20);d.setFont('helvetica','bold');d.setFontSize(7.2);d.text(fmt(data.cell.raw,data.column.index),data.cell.x+data.cell.width/2,data.cell.y+data.cell.height/2+2,{align:'center'});}
      }
    },
-   didDrawPage:()=>{d.setFont('helvetica','normal');d.setFontSize(6.5);d.setTextColor(100,100,100);d.text('AC-34 MATIALA • SIR-2026',8,204);d.text('Generated: '+generatedAt,148,204,{align:'center'});d.text('Page '+d.internal.getNumberOfPages(),289,204,{align:'right'})},
-   margin:{left:5,right:5,top:31,bottom:12},rowPageBreak:'avoid'
+   didDrawPage:()=>{d.setFont('helvetica','normal');d.setFontSize(6.5);d.setTextColor(100,100,100);d.text('AC-34 MATIALA • SIR-2026',8,285);d.text('Generated: '+generatedAt,210,285,{align:'center'});d.text('Page '+d.internal.getNumberOfPages(),412,285,{align:'right'})},
+   margin:{left:5,right:5,top:31,bottom:12},rowPageBreak:'avoid',pageBreak:'auto'
  });
  
  if(psRows&&psRows.length){
