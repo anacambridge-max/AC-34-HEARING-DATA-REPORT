@@ -22,7 +22,9 @@ function parse(wb){
  const cols=ws?.['!cols']||[];
  const headerIndex=Math.max(0,a.findIndex(r=>r?.some(v=>String(v??'').trim().toLowerCase()==='officer name')));
  const headers=a[headerIndex]||[];
- const visibleIndexes=headers.map((_,i)=>i).filter(i=>!cols[i]?.hidden && String(headers[i]??'').trim()!=='');
+ const wantedHeaders=['S No','Officer Name','No. of PS','Notice Generated (NO MAP + ANOMALY)','Hearing Notice Scheduled NO MAPPING','NO MAP NOTICE DELIVERED','% NO MAPPING DELIVERED','Documents Uploaded by BLO','% Docs Uploaded (of Notice Delivered)','Hearing Held + Date Lapsed','Total Disposal','% Total Disposal'];
+ const norm=s=>String(s??'').replace(/\\s+/g,' ').trim().toLowerCase();
+ const visibleIndexes=wantedHeaders.map(w=>headers.findIndex(h=>norm(h)===norm(w))).filter(i=>i>=0);
  const reportHeaders=visibleIndexes.map(i=>String(headers[i]));
  const rawOfficerRows=a.slice(headerIndex+1).filter(r=>r?.[1]);
  const reportRows=rawOfficerRows.filter(r=>String(r[0]).toUpperCase()!=='GRAND TOTAL').map(r=>visibleIndexes.map(i=>r[i]??''));
