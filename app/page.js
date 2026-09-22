@@ -45,31 +45,38 @@ function reportPDF(title,headers,rows,grandRow){
  d.text('AC-34 MATIALA — OFFICER WISE REPORT',148,13,{align:'center'});
  d.setFontSize(11);d.text(title,148,21,{align:'center'});
  d.setFontSize(8);d.setTextColor(80,80,80);d.text('SIR-2026 • Officer-wise monitoring report',148,26,{align:'center'});
- const isPctHeader=h=>['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(h);
- const fmt=(v,i)=>{const h=String(headers[i]||''),num=parseFloat(String(v??''));return isPctHeader(h)&&Number.isFinite(num)?num.toFixed(2):String(v??'')};
+ const isPctHeader=h=>['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(String(h||'').trim());
+ const fmt=(v,i)=>{const num=parseFloat(String(v??''));return isPctHeader(headers[i])&&Number.isFinite(num)?num.toFixed(2):String(v??'')};
  let body=rows.map(r=>r.map((v,i)=>fmt(v,i)));
  if(grandRow){const gr=grandRow.map((v,i)=>fmt(v,i));gr[0]='GRAND TOTAL';gr[1]='';body.push(gr)}
  const totalIndex=grandRow?body.length-1:-1;
- autoTable(d,{startY:31,head:[headers],body,theme:'grid',tableWidth:'wrap',
- columnStyles:{0:{cellWidth:10},1:{cellWidth:42},2:{cellWidth:13},3:{cellWidth:25},4:{cellWidth:25},5:{cellWidth:22},6:{cellWidth:21},7:{cellWidth:24},8:{cellWidth:31},9:{cellWidth:25},10:{cellWidth:18},11:{cellWidth:20}},
- styles:{font:'helvetica',fontSize:7.1,fontStyle:'bold',cellPadding:{top:3.2,right:2.2,bottom:3.2,left:2.2},overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.35,textColor:[20,20,20],minCellHeight:12},
- headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:7.2,cellPadding:{top:4.5,right:2.2,bottom:4.5,left:2.2},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:25},
- alternateRowStyles:{fillColor:[242,242,242]},
- didParseCell:data=>{
-   if(data.section==='body'&&data.row.index===totalIndex){data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold';data.cell.styles.fontSize=7.3;if(data.column.index===0||data.column.index===1)data.cell.styles.lineWidth=0}
-   const h=String(headers[data.column.index]||'');
-   if(data.section==='body'&&isPctHeader(h)){const v=parseFloat(String(data.cell.raw).replace('%',''));if(Number.isFinite(v))data.cell.styles.fillColor=scaleColor(v)}
-   if(data.section==='body'&&data.row.index===totalIndex&&data.column.index===1){data.cell.text=[];data.cell.styles.fillColor=totalYellow}
- },
- didDrawCell:data=>{
-   if(data.section==='body'&&data.row.index===totalIndex&&data.column.index===1){
-     const first=data.table.columns[0], x=first.x, w=first.width+data.cell.width, y=data.cell.y, h=data.cell.height;
-     d.setFillColor(...totalYellow);d.setDrawColor(0,0,0);d.setLineWidth(.35);d.rect(x,y,w,h,'FD');
-     d.setFont('helvetica','bold');d.setFontSize(7.3);d.setTextColor(20,20,20);d.text('GRAND TOTAL',x+w/2,y+h/2+2.5,{align:'center'});
-   }
- },
- didDrawPage:()=>{d.setFont('helvetica','normal');d.setFontSize(6.5);d.setTextColor(100,100,100);d.text('AC-34 MATIALA • SIR-2026',8,204);d.text('Page '+d.internal.getNumberOfPages(),289,204,{align:'right'})},
- margin:{left:5,right:5,top:31,bottom:12},rowPageBreak:'avoid'});
+ const widths=[9,41,12,24,24,21,20,23,30,24,17,19];
+ autoTable(d,{
+   startY:31,head:[headers],body,theme:'grid',tableWidth:'wrap',
+   columnStyles:Object.fromEntries(widths.map((w,i)=>[i,{cellWidth:w}])),
+   styles:{font:'helvetica',fontSize:7,fontStyle:'bold',cellPadding:{top:3,right:1.8,bottom:3,left:1.8},overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.35,textColor:[20,20,20],minCellHeight:12},
+   headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:7,cellPadding:{top:4,right:1.5,bottom:4,left:1.5},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:25},
+   alternateRowStyles:{fillColor:[242,242,242]},
+   didParseCell:data=>{
+     if(data.section==='body'&&data.row.index===totalIndex){
+       data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold';data.cell.styles.fontSize=7.2;
+       if(data.column.index===0){data.cell.colSpan=2;data.cell.styles.halign='center'}
+       if(data.column.index===1)data.cell.styles.textColor=totalYellow;
+     }
+   },
+   didDrawCell:data=>{
+     if(data.section==='body'&&data.row.index===totalIndex&&data.column.index===0){
+       d.setDrawColor(0,0,0);d.setLineWidth(.35);d.rect(data.cell.x,data.cell.y,data.cell.width,data.cell.height);
+     }
+     const h=headers[data.column.index];
+     if(data.section==='body'&&isPctHeader(h)){
+       const v=parseFloat(String(data.cell.raw));
+       if(Number.isFinite(v)){d.setFillColor(...scaleColor(v));d.rect(data.cell.x,data.cell.y,data.cell.width,data.cell.height,'F');d.setTextColor(20,20,20);d.setFont('helvetica','bold');d.setFontSize(7.2);d.text(fmt(data.cell.raw,data.column.index),data.cell.x+data.cell.width/2,data.cell.y+data.cell.height/2+2,{align:'center'});}
+     }
+   },
+   didDrawPage:()=>{d.setFont('helvetica','normal');d.setFontSize(6.5);d.setTextColor(100,100,100);d.text('AC-34 MATIALA • SIR-2026',8,204);d.text('Page '+d.internal.getNumberOfPages(),289,204,{align:'right'})},
+   margin:{left:5,right:5,top:31,bottom:12},rowPageBreak:'avoid'
+ });
  d.save('AC34_'+title.replace(/[^A-Za-z0-9]+/g,'_')+'_Officer_Wise_Report.pdf');
 }
 function psPDF(o,rows){
@@ -111,7 +118,7 @@ export default function Page(){
  {tab==='dash'?<>
  <section className="officer-grid">{data.officers.map((o,i)=><button key={o.name} className={'officer-card '+(officer.name===o.name?'active':'')} onClick={()=>{setSel(o.name);setQ('')}}><b>{o.name}</b><strong>{o.ps}</strong><small>PS</small><span>Delivered <em>{o.delivered}</em> • Docs <em>{o.docs}</em> • Held <em>{o.held}</em></span></button>)}</section>
  <section className="summary">{[['Officer',officer.name],['PS',officer.ps],['Generated',officer.generated],['Scheduled',officer.scheduled],['Delivered',officer.delivered],['% Delivered',pct(officer.deliveredPct)],['Docs',officer.docs],['Hearings',officer.held]].map(x=><div key={x[0]}><small>{x[0]}</small><b>{x[1]}</b></div>)}<button className="download" onClick={()=>{psPDF(officer,allOfficerRows);downloadOfficerWise(officer,idx)}}>DOWNLOAD OFFICER + PS PDFs</button></section>
- <section className="table-section"><div className="table-head"><div><h2>{officer.name} — PS DETAIL</h2><small>{rows.length} PS</small></div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search PS / BLO / Supervisor"/></div><div className="table-wrap"><table><thead><tr><th>PS</th><th>BLO</th><th>Supervisor</th><th>Scheduled</th><th>Delivered</th><th>Pending</th><th>% Delivered</th><th>Docs Uploaded</th><th>% Docs</th><th>Hearing</th><th>Date(s)</th></tr></thead><tbody>{rows.map(r=><tr key={r.ps}><td><b>{r.ps}</b></td><td>{r.blo}</td><td>{r.supervisor}</td><td>{r.scheduled}</td><td>{r.delivered}</td><td>{r.pending}</td><td><i className={'pill '+(r.deliveredPct>=80?'good':r.deliveredPct>=60?'mid':'low')}>{pct(r.deliveredPct)}</i></td><td>{r.docs}</td><td>{pct(r.docsPct)}</td><td>{r.status||'—'}</td><td>{r.dates||'—'}</td></tr>)}</tbody></table></div></section>
+ <section className="table-section report-excel officer-selected-report"><div className="excel-report-title">AC-34 MATIALA — OFFICER WISE REPORT</div><div className="report-head"><div><h2>{officer.name}</h2><small>Same 12 visible Excel headings</small></div></div><div className="table-wrap report-scroll"><table><thead><tr>{data.reportHeaders.map(x=><th key={x}>{x}</th>)}</tr></thead><tbody><tr>{data.reportRows[idx].map((v,j)=>{const h=data.reportHeaders[j],numv=parseFloat(String(v??'')),isPct=['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(h);return <td key={j} style={isPct&&Number.isFinite(numv)?{background:'rgb('+scaleColor(numv).join(',')+')'}:undefined}>{isPct&&Number.isFinite(numv)?numv.toFixed(2):String(v??'')}</td>})}</tr></tbody></table></div></section> <section className="table-section"><div className="table-head"><div><h2>{officer.name} — PS DETAIL</h2><small>{rows.length} PS</small></div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search PS / BLO / Supervisor"/></div><div className="table-wrap"><table><thead><tr><th>PS</th><th>BLO</th><th>Supervisor</th><th>Scheduled</th><th>Delivered</th><th>Pending</th><th>% Delivered</th><th>Docs Uploaded</th><th>% Docs</th><th>Hearing</th><th>Date(s)</th></tr></thead><tbody>{rows.map(r=><tr key={r.ps}><td><b>{r.ps}</b></td><td>{r.blo}</td><td>{r.supervisor}</td><td>{r.scheduled}</td><td>{r.delivered}</td><td>{r.pending}</td><td><i className={'pill '+(r.deliveredPct>=80?'good':r.deliveredPct>=60?'mid':'low')}>{pct(r.deliveredPct)}</i></td><td>{r.docs}</td><td>{pct(r.docsPct)}</td><td>{r.status||'—'}</td><td>{r.dates||'—'}</td></tr>)}</tbody></table></div></section>
  </>:<section className="table-section report-excel"><div className="excel-report-title">AC-34 MATIALA — OFFICER WISE REPORT</div><div className="report-head"><div><h2>OFFICER WISE REPORT — ALL 6 OFFICERS</h2><small>Same visible headings, hidden columns excluded, Excel-style colours preserved</small></div><div className="report-actions"><button className="download" onClick={downloadConsolidated}>DOWNLOAD CONSOLIDATED PDF</button><button className="download" onClick={()=>downloadOfficerWise(officer,idx)}>DOWNLOAD SELECTED OFFICER PDF</button></div></div><div className="table-wrap report-scroll" ref={reportWrap}><table><thead><tr>{data.reportHeaders.map(x=><th key={x}>{x}</th>)}</tr></thead><tbody>{data.reportRows.map((r,i)=><tr key={i}>{r.map((v,j)=>{const h=data.reportHeaders[j];const val=String(v??'');const isPct=['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(h);const numv=parseFloat(val);const display=isPct&&Number.isFinite(numv)?numv.toFixed(2):val;return <td key={j} style={isPct&&Number.isFinite(numv)?{background:'rgb('+scaleColor(numv).join(',')+')',fontWeight:700}:undefined}>{display}</td>})}</tr>)}{data.grandRow&&<tr className="grand"><td colSpan={2}>GRAND TOTAL</td>{data.grandRow.slice(2).map((v,j)=>{const col=j+2,h=data.reportHeaders[col],val=String(v??''),isPct=['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(h),numv=parseFloat(val);return <td key={col}>{isPct&&Number.isFinite(numv)?numv.toFixed(2):val}</td>})}</tr>}</tbody></table></div></section>}
  </>}
  <footer>Upload Excel → visible columns only → same report headings → same Excel-style colours → individual + consolidated PDFs.</footer>
