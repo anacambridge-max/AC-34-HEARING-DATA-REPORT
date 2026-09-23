@@ -166,9 +166,9 @@ function reportPDF(title,headers,rows,grandRow,psRows=[]){
  });
  
  if(psRows&&psRows.length){
-   const psHeaders=['S No','Part No','Officer Name','BLO Name','BLO Supervisor Name','Notice Generated (NO MAP + ANOMALY)','Hearing Notice Scheduled NO MAPPING','Notice Delivered','Notice Pending Delivery','% NO MAPPING NOTICE DELIVERED','Documents Uploaded by BLO','% DOCS UPLOADED (of NOTICE DELIVERED)','Hearing Date(s)','Hearing Held + Date Lapsed','Total Disposal','% Total Disposal'];
-   const psBody=psRows.map((r,i)=>[i+1,r.ps,cleanOfficerName(r.officer||title),r.blo,r.supervisor,r.generated||'',r.scheduled,r.delivered,r.pending,pct(r.deliveredPct),r.docs,pct(r.docsPct),r.dates||'—',r.heldLapsed||0,r.disposal||0,pct(r.disposalPct)]);
-   psBody.push(['','', 'OFFICER TOTAL','','',psRows.reduce((a,r)=>a+n(r.generated),0),psRows.reduce((a,r)=>a+n(r.scheduled),0),psRows.reduce((a,r)=>a+n(r.delivered),0),psRows.reduce((a,r)=>a+n(r.pending),0),'',psRows.reduce((a,r)=>a+n(r.docs),0),'','',psRows.reduce((a,r)=>a+n(r.heldLapsed),0),psRows.reduce((a,r)=>a+n(r.disposal),0),'']);
+   const psHeaders=['S No','Part No','Officer Name','BLO Name','BLO Supervisor Name','Notice Generated (NO MAP + ANOMALY)','Hearing Notice Scheduled NO MAPPING','Notice Delivered','Notice Pending Delivery','% NO MAPPING NOTICE DELIVERED','Documents Uploaded by BLO','% DOCS UPLOADED (of NOTICE DELIVERED)','Hearing Date(s)','Hearing Held + Date Lapsed','Disposal Till Yesterday','Disposal Today','Total Disposal','% Total Disposal'];
+   const psBody=psRows.map((r,i)=>[i+1,r.ps,cleanOfficerName(r.officer||title),r.blo,r.supervisor,r.generated||'',r.scheduled,r.delivered,r.pending,pct(r.deliveredPct),r.docs,pct(r.docsPct),r.dates||'—',r.heldLapsed||0,r.yesterdayHeld||0,r.todayHeld||0,r.disposal||0,pct(r.disposalPct)]);
+   psBody.push(['','', 'OFFICER TOTAL','','',psRows.reduce((a,r)=>a+n(r.generated),0),psRows.reduce((a,r)=>a+n(r.scheduled),0),psRows.reduce((a,r)=>a+n(r.delivered),0),psRows.reduce((a,r)=>a+n(r.pending),0),'',psRows.reduce((a,r)=>a+n(r.docs),0),'','',psRows.reduce((a,r)=>a+n(r.heldLapsed),0),psRows.reduce((a,r)=>a+n(r.yesterdayHeld),0),psRows.reduce((a,r)=>a+n(r.todayHeld),0),psRows.reduce((a,r)=>a+n(r.disposal),0),'']);
    d.addPage();
    d.setFont('helvetica','bold');d.setTextColor(...excelBlue);d.setFontSize(16);
    d.text('AC-34 MATIALA — OFFICER WISE PS DETAIL',210,14,{align:'center'});
@@ -176,11 +176,11 @@ function reportPDF(title,headers,rows,grandRow,psRows=[]){
    d.setFontSize(7.5);d.setTextColor(80,80,80);d.text('SIR-2026 • Complete PS-wise report',210,26,{align:'center'});
    d.text('Report Generated: '+generatedAt,291,26,{align:'right'});
    autoTable(d,{startY:31,head:[psHeaders],body:psBody,theme:'grid',tableWidth:'wrap',
-     columnStyles:Object.fromEntries([10,11,31,37,37,25,24,25,22,27,24,27,29,28,26,18].map((w,i)=>[i,{cellWidth:w}])),
+     columnStyles:Object.fromEntries([9,10,26,31,31,24,23,23,21,25,23,26,27,25,24,23,24,18].map((w,i)=>[i,{cellWidth:w}])),
      styles:{font:'helvetica',fontSize:9.5,fontStyle:'bold',cellPadding:{top:3.2,right:1.6,bottom:3.2,left:1.6},overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.35,textColor:[20,20,20],minCellHeight:14},
      headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:9.2,cellPadding:{top:5,right:1.5,bottom:5,left:1.5},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:30},
      alternateRowStyles:{fillColor:stripe},
-     didParseCell:data=>{if(data.section==='body'&&data.row.index===psBody.length-1){data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold'} if(data.section==='body'&&[9,11,15].includes(data.column.index)){const v=parseFloat(String(data.cell.raw));if(Number.isFinite(v))data.cell.styles.fillColor=scaleColor(v)}
+     didParseCell:data=>{if(data.section==='body'&&data.row.index===psBody.length-1){data.cell.styles.fillColor=totalYellow;data.cell.styles.fontStyle='bold'} if(data.section==='body'&&[9,11,17].includes(data.column.index)){const v=parseFloat(String(data.cell.raw));if(Number.isFinite(v))data.cell.styles.fillColor=scaleColor(v)}
      if(data.section==='body'&&data.column.index===12){
        const row=psRows[data.row.index];
        if(row && row.dates){
