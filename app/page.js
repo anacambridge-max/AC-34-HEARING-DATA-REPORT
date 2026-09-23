@@ -137,7 +137,7 @@ function reportPDF(title,headers,rows,grandRow,psRows=[]){
  let body=rows.map(r=>r.map((v,i)=>fmt(v,i)));
  if(grandRow){const gr=grandRow.map((v,i)=>fmt(v,i));gr[0]='GRAND TOTAL';gr[1]='';body.push(gr)}
  const totalIndex=grandRow?body.length-1:-1;
- const widths=[13,61,18,36,36,31,30,35,45,36,25,28];
+ const widths=[11,54,15,33,33,29,28,35,43,34,28,27,27,24];
  autoTable(d,{
    startY:31,head:[headers],body,theme:'grid',tableWidth:400,
    columnStyles:Object.fromEntries(widths.map((w,i)=>[i,{cellWidth:w}])),
