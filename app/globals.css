@@ -6,21 +6,23 @@
 .table-section:not(.report-excel) th{font-size:10px!important;line-height:1.15!important;padding:10px 6px!important;height:64px!important;background:#1f3864!important;color:#fff!important}
 .table-section:not(.report-excel) td{font-size:11px!important;line-height:1.2!important;padding:7px 5px!important;font-weight:700!important;color:#111!important}
 .table-section:not(.report-excel) th:nth-child(1),.table-section:not(.report-excel) td:nth-child(1){width:4%}
-.table-section:not(.report-excel) th:nth-child(2),.table-section:not(.report-excel) td:nth-child(2){width:5%}
+.table-section:not(.report-excel) th:nth-child(2),.table-section:not(.report-excel) td:nth-child(2){width:4%}
 .table-section:not(.report-excel) th:nth-child(3),.table-section:not(.report-excel) td:nth-child(3){width:8%}
 .table-section:not(.report-excel) th:nth-child(4),.table-section:not(.report-excel) td:nth-child(4){width:8%}
 .table-section:not(.report-excel) th:nth-child(5),.table-section:not(.report-excel) td:nth-child(5){width:8%}
 .table-section:not(.report-excel) th:nth-child(6),.table-section:not(.report-excel) td:nth-child(6){width:7%}
 .table-section:not(.report-excel) th:nth-child(7),.table-section:not(.report-excel) td:nth-child(7){width:6%}
-.table-section:not(.report-excel) th:nth-child(8),.table-section:not(.report-excel) td:nth-child(8){width:6%}
-.table-section:not(.report-excel) th:nth-child(9),.table-section:not(.report-excel) td:nth-child(9){width:6%}
-.table-section:not(.report-excel) th:nth-child(10),.table-section:not(.report-excel) td:nth-child(10){width:7%}
-.table-section:not(.report-excel) th:nth-child(11),.table-section:not(.report-excel) td:nth-child(11){width:6%}
-.table-section:not(.report-excel) th:nth-child(12),.table-section:not(.report-excel) td:nth-child(12){width:7%}
-.table-section:not(.report-excel) th:nth-child(13),.table-section:not(.report-excel) td:nth-child(13){width:7%}
-.table-section:not(.report-excel) th:nth-child(14),.table-section:not(.report-excel) td:nth-child(14){width:7%}
+.table-section:not(.report-excel) th:nth-child(8),.table-section:not(.report-excel) td:nth-child(8){width:5%}
+.table-section:not(.report-excel) th:nth-child(9),.table-section:not(.report-excel) td:nth-child(9){width:5%}
+.table-section:not(.report-excel) th:nth-child(10),.table-section:not(.report-excel) td:nth-child(10){width:6%}
+.table-section:not(.report-excel) th:nth-child(11),.table-section:not(.report-excel) td:nth-child(11){width:5%}
+.table-section:not(.report-excel) th:nth-child(12),.table-section:not(.report-excel) td:nth-child(12){width:6%}
+.table-section:not(.report-excel) th:nth-child(13),.table-section:not(.report-excel) td:nth-child(13){width:6%}
+.table-section:not(.report-excel) th:nth-child(14),.table-section:not(.report-excel) td:nth-child(14){width:6%}
 .table-section:not(.report-excel) th:nth-child(15),.table-section:not(.report-excel) td:nth-child(15){width:5%}
-.table-section:not(.report-excel) th:nth-child(16),.table-section:not(.report-excel) td:nth-child(16){width:3%}
+.table-section:not(.report-excel) th:nth-child(16),.table-section:not(.report-excel) td:nth-child(16){width:5%}
+.table-section:not(.report-excel) th:nth-child(17),.table-section:not(.report-excel) td:nth-child(17){width:5%}
+.table-section:not(.report-excel) th:nth-child(18),.table-section:not(.report-excel) td:nth-child(18){width:4%}
 
 /* Officer-wise report — exactly 14 columns, widths sum to 100% */
 .report-excel .table-wrap{overflow-x:auto!important;overflow-y:hidden!important;-webkit-overflow-scrolling:touch}
