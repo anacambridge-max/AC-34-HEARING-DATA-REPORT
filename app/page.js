@@ -137,9 +137,9 @@ function reportPDF(title,headers,rows,grandRow,psRows=[]){
  let body=rows.map(r=>headers.map((_,i)=>fmt(r[i],i)));
  if(grandRow){const gr=grandRow.map((v,i)=>fmt(v,i));gr[0]='GRAND TOTAL';gr[1]='';body.push(gr)}
  const totalIndex=grandRow?body.length-1:-1;
- const widths=[11,50,15,30,31,29,26,32,38,31,27,26,27,27];
+ const widths=[10,43,14,26,27,25,24,29,34,28,23,23,23,21];
  autoTable(d,{
-   startY:31,head:[headers],body,theme:'grid',tableWidth:400,
+   startY:31,head:[headers],body,theme:'grid',tableWidth:390,
    columnStyles:Object.fromEntries(widths.map((w,i)=>[i,{cellWidth:w}])),
    styles:{font:'helvetica',fontSize:9.5,fontStyle:'bold',cellPadding:{top:3,right:1.8,bottom:3,left:1.8},overflow:'linebreak',valign:'middle',halign:'center',lineColor:[0,0,0],lineWidth:.35,textColor:[20,20,20],minCellHeight:12},
    headStyles:{fillColor:excelBlue,textColor:excelHeaderText,font:'helvetica',fontStyle:'bold',fontSize:9.2,cellPadding:{top:4,right:1.5,bottom:4,left:1.5},halign:'center',valign:'middle',overflow:'linebreak',minCellHeight:25},
@@ -162,7 +162,7 @@ function reportPDF(title,headers,rows,grandRow,psRows=[]){
      }
    },
    didDrawPage:()=>{d.setFont('helvetica','normal');d.setFontSize(10);d.setTextColor(100,100,100);d.text('AC-34 MATIALA • SIR-2026',8,285);d.text('Generated: '+generatedAt,210,285,{align:'center'});d.text('Page '+d.internal.getNumberOfPages(),412,285,{align:'right'})},
-   margin:{left:10,right:10,top:31,bottom:12},rowPageBreak:'avoid',pageBreak:'auto'
+   margin:{left:15,right:15,top:31,bottom:12},rowPageBreak:'avoid',pageBreak:'auto'
  });
  
  if(psRows&&psRows.length){
