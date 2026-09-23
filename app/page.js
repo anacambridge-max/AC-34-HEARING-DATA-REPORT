@@ -134,10 +134,10 @@ function reportPDF(title,headers,rows,grandRow,psRows=[]){
  d.setFontSize(7.5);d.text('Report Generated: '+generatedAt,291,26,{align:'right'});
  const isPctHeader=h=>['% NO MAPPING DELIVERED','% Docs Uploaded (of Notice Delivered)','% Total Disposal'].includes(String(h||'').trim());
  const fmt=(v,i)=>{const num=parseFloat(String(v??''));return isPctHeader(headers[i])&&Number.isFinite(num)?num.toFixed(2):String(v??'')};
- let body=rows.map(r=>r.map((v,i)=>fmt(v,i)));
+ let body=rows.map(r=>headers.map((_,i)=>fmt(r[i],i)));
  if(grandRow){const gr=grandRow.map((v,i)=>fmt(v,i));gr[0]='GRAND TOTAL';gr[1]='';body.push(gr)}
  const totalIndex=grandRow?body.length-1:-1;
- const widths=[11,54,15,33,33,29,28,35,43,34,28,27,27,24];
+ const widths=[11,50,15,30,31,29,26,32,38,31,27,26,27,27];
  autoTable(d,{
    startY:31,head:[headers],body,theme:'grid',tableWidth:400,
    columnStyles:Object.fromEntries(widths.map((w,i)=>[i,{cellWidth:w}])),
