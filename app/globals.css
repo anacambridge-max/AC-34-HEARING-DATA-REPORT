@@ -50,3 +50,18 @@
 /* Keep the horizontal scrollbar visible and easy to use */
 .report-excel .table-wrap::-webkit-scrollbar,.table-section:not(.report-excel) .table-wrap::-webkit-scrollbar{height:12px}
 .report-excel .table-wrap::-webkit-scrollbar-thumb,.table-section:not(.report-excel) .table-wrap::-webkit-scrollbar-thumb{background:#496987;border-radius:8px}
+
+/* Officer dashboard: 12 visible columns after hiding BLO document metrics */
+.officer-dashboard-report.report-excel table{width:100%!important;min-width:0!important;table-layout:fixed!important}
+.officer-dashboard-report.report-excel th:nth-child(1),.officer-dashboard-report.report-excel td:nth-child(1){width:4%}
+.officer-dashboard-report.report-excel th:nth-child(2),.officer-dashboard-report.report-excel td:nth-child(2){width:14%}
+.officer-dashboard-report.report-excel th:nth-child(3),.officer-dashboard-report.report-excel td:nth-child(3){width:6%}
+.officer-dashboard-report.report-excel th:nth-child(4),.officer-dashboard-report.report-excel td:nth-child(4){width:10%}
+.officer-dashboard-report.report-excel th:nth-child(5),.officer-dashboard-report.report-excel td:nth-child(5){width:11%}
+.officer-dashboard-report.report-excel th:nth-child(6),.officer-dashboard-report.report-excel td:nth-child(6){width:9%}
+.officer-dashboard-report.report-excel th:nth-child(7),.officer-dashboard-report.report-excel td:nth-child(7){width:8%}
+.officer-dashboard-report.report-excel th:nth-child(8),.officer-dashboard-report.report-excel td:nth-child(8){width:10%}
+.officer-dashboard-report.report-excel th:nth-child(9),.officer-dashboard-report.report-excel td:nth-child(9){width:9%}
+.officer-dashboard-report.report-excel th:nth-child(10),.officer-dashboard-report.report-excel td:nth-child(10){width:7%}
+.officer-dashboard-report.report-excel th:nth-child(11),.officer-dashboard-report.report-excel td:nth-child(11){width:7%}
+.officer-dashboard-report.report-excel th:nth-child(12),.officer-dashboard-report.report-excel td:nth-child(12){width:5%}
