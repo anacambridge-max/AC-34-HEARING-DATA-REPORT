@@ -130,7 +130,7 @@ function buildData(ref,eci,comparison){
    const heldLapsedDifference=heldLapsed-comparisonHeldLapsed;
    const todayDelivered=delivered-n(y.delivered),todayPending=n(e.pending)-n(y.pending),todayHeld=held-n(y.held),todayLapsed=lapsed-n(y.lapsed);
    const ai=AERO_BY_PS.get(ps)||{name:'Unmapped AERO',mobile:''};
-   return {ps,aero:ai.name,aeroMobile:ai.mobile,officer:map.officer,blo:map.blo,supervisor:map.supervisor,centre:map.centre,generated:n(e.generated),pendingGen:n(e.pendingGen),scheduled,delivered,pending:n(e.pending),deliveredPct:generated?delivered/generated*100:0,docs,docsPct:delivered?docs/delivered*100:0,dates:h.dates||'',status:h.status||'',heldLapsed,comparisonHeldLapsed,heldLapsedDifference,disposal:held,disposalPct:heldLapsed?held/heldLapsed*100:0,yesterdayDelivered:n(y.delivered),todayDelivered,todayPending,yesterdayPending:n(y.pending),yesterdayHeld:n(y.held),todayHeld,yesterdayLapsed:n(y.lapsed),todayLapsed,totalDelivered:delivered,totalPending:n(e.pending),totalHeld:held,totalLapsed:lapsed,parked:n(e.parked)};
+   return {ps,aero:ai.name,aeroMobile:ai.mobile,officer:map.officer,blo:map.blo,supervisor:map.supervisor,centre:map.centre,generated:n(e.generated),pendingGen:n(e.pendingGen),scheduled,delivered,pending:n(e.pending),deliveredPct:n(e.generated)?delivered/n(e.generated)*100:0,docs,docsPct:delivered?docs/delivered*100:0,dates:h.dates||'',status:h.status||'',heldLapsed,comparisonHeldLapsed,heldLapsedDifference,disposal:held,disposalPct:heldLapsed?held/heldLapsed*100:0,yesterdayDelivered:n(y.delivered),todayDelivered,todayPending,yesterdayPending:n(y.pending),yesterdayHeld:n(y.held),todayHeld,yesterdayLapsed:n(y.lapsed),todayLapsed,totalDelivered:delivered,totalPending:n(e.pending),totalHeld:held,totalLapsed:lapsed,parked:n(e.parked)};
  });
  const officers=names.map((name,i)=>{
    const rr=details.filter(r=>cleanOfficerName(r.officer)===cleanOfficerName(name));
@@ -138,7 +138,7 @@ function buildData(ref,eci,comparison){
    const scheduled=sum('scheduled'),delivered=sum('delivered'),docs=sum('docs'),heldLapsed=sum('heldLapsed'),disposal=sum('disposal');
    const yesterdayDisposal=rr.reduce((a,r)=>a+n(r.yesterdayHeld),0),todayDisposal=rr.reduce((a,r)=>a+n(r.todayHeld),0);
    const row=[i+1,name,rr.length,sum('generated'),scheduled,delivered,scheduled?delivered/scheduled*100:0,docs,delivered?docs/delivered*100:0,heldLapsed,yesterdayDisposal,todayDisposal,disposal,heldLapsed?disposal/heldLapsed*100:0];
-   return {sno:i+1,name:cleanOfficerName(name),ps:rr.length,generated:sum('generated'),pendingGen:sum('pendingGen'),scheduled,delivered,deliveredPct:generated?delivered/generated*100:0,pendingDelivery:sum('pending'),held:disposal,lapsed:sum('totalLapsed'),docs,reportRow:row};
+   return {sno:i+1,name:cleanOfficerName(name),ps:rr.length,generated:sum('generated'),pendingGen:sum('pendingGen'),scheduled,delivered,deliveredPct:sum('generated')?delivered/sum('generated')*100:0,pendingDelivery:sum('pending'),held:disposal,lapsed:sum('totalLapsed'),docs,reportRow:row};
  });
  const reportHeaders=['S No','Officer Name','No. of PS','Notice Generated (NO MAP + ANOMALY)','Hearing Notice Scheduled NO MAPPING','NO MAP NOTICE DELIVERED','% NO MAPPING DELIVERED','Documents Uploaded by BLO','% Docs Uploaded (of Notice Delivered)','Hearing Held + Date Lapsed','Disposal Till Yesterday','Disposal Today','Total Disposal','% Total Disposal'];
  const aeroReports=AERO_GROUPS.map((g,gi)=>{
