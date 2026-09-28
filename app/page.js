@@ -295,15 +295,95 @@ function uploadSource(e,kind){const f=e.target.files?.[0];if(!f)return;readFile(
  }
 function downloadPSAeroWisePDF(){
    const d=new jsPDF({orientation:'landscape',unit:'mm',format:'a3'});
-   d.setFont('helvetica','bold');d.setFontSize(17);d.setTextColor(...excelBlue);
-   d.text('AC-34 MATIALA — PS-WISE AERO/Ad.AERO REPORT',210,13,{align:'center'});
+   const head=['S.No.','P.S. No.','BLO Name','BLO Supervisor','Notice Generated','Notice Delivered','% Delivered (of Gen.)','Hearing Held + Lapsed (Latest)','Hearing Held + Lapsed (Comparison)','Difference (Latest - Comparison)','% (Latest Held + Lapsed) (of Gen.)','Parked for Final Publication'];
    data.aeroReports.forEach((a,ai)=>{
-     if(ai>0)d.addPage(); const y=ai===0?22:18;
+     if(ai>0)d.addPage();
+     const y=ai===0?22:18;
+     d.setFont('helvetica','bold');d.setFontSize(17);d.setTextColor(...excelBlue);
+     d.text('AC-34 MATIALA — PS-WISE AERO/Ad.AERO REPORT',210,11,{align:'center'});
      d.setFontSize(11);d.setTextColor(...excelBlue);d.text(a.name,15,y);
-     d.setFontSize(7);d.setTextColor(80,80,80);d.text('PS: '+a.ps+' • Supervisors: '+a.supervisors.length,15,y+5);
-     const body=a.rows.map((r,i)=>[i+1,r.ps,r.blo||'—',r.supervisor||'—',r.generated,r.delivered,pct(r.generated?r.delivered/r.generated*100:0),r.heldLapsed,r.comparisonHeldLapsed,r.heldLapsedDifference,pct(r.generated?r.heldLapsed/r.generated*100:0),r.parked]);
+     d.setFontSize(8);d.setTextColor(80,80,80);d.text('PS: '+a.ps+' • Supervisors: '+a.supervisors.length,15,y+5);
+     const body=a.rows.map((r,i)=>[
+       i+1,r.ps,r.blo||'—',r.supervisor||'—',r.generated,r.delivered,
+       pct(r.generated?r.delivered/r.generated*100:0),r.heldLapsed,r.comparisonHeldLapsed,
+       r.heldLapsedDifference,pct(r.generated?r.heldLapsed/r.generated*100:0),r.parked
+     ]);
      body.push(['','','TOTAL — '+a.name,'',a.generated,a.delivered,pct(a.deliveredPct),a.heldLapsed,a.comparisonHeldLapsed,a.heldLapsedDifference,pct(a.heldLapsedPct),a.parked]);
-     autoTable(d,{startY:y+9,head:[['S.No.','P.S. No.','BLO Name','BLO Supervisor','Notice Generated','Notice Delivered','% Delivered (of Gen.)','Hearing Held + Lapsed (Latest)','Hearing Held + Lapsed (Comparison)','Difference (Latest - Comparison)','% (Latest Held + Lapsed) (of Gen.)','Parked for Final Publication']],body,theme:'grid',styles:{fontSize:7,cellPadding:2,halign:'center',valign:'middle',lineColor:[0,0,0],lineWidth:.25},headStyles:{fillColor:excelBlue,textColor:[255,255,255],fontStyle:'bold',overflow:'linebreak'},columnStyles:{2:{halign:'left',cellWidth:42},3:{halign:'left',cellWidth:42}},didParseCell:x=>{if(x.row.index===body.length-1){x.cell.styles.fillColor=totalYellow;x.cell.styles.fontStyle='bold'}}});
+     autoTable(d,{
+       startY:y+9,
+       head:[head],
+       body,
+       theme:'grid',
+       margin:{left:8,right:8},
+       styles:{
+         font:'helvetica',
+         fontStyle:'bold',
+         fontSize:9,
+         cellPadding:3,
+         halign:'center',
+         valign:'middle',
+         lineColor:[0,0,0],
+         lineWidth:.35,
+         textColor:[20,20,20],
+         overflow:'linebreak'
+       },
+       headStyles:{
+         fillColor:excelBlue,
+         textColor:[255,255,255],
+         fontStyle:'bold',
+         fontSize:9,
+         cellPadding:3.5,
+         halign:'center',
+         valign:'middle',
+         overflow:'linebreak'
+       },
+       columnStyles:{
+         0:{cellWidth:13},
+         1:{cellWidth:18},
+         2:{halign:'left',cellWidth:50},
+         3:{halign:'left',cellWidth:50},
+         4:{cellWidth:25},
+         5:{cellWidth:25},
+         6:{cellWidth:27},
+         7:{cellWidth:31},
+         8:{cellWidth:31},
+         9:{cellWidth:29},
+         10:{cellWidth:30},
+         11:{cellWidth:27}
+       },
+       didParseCell:x=>{
+         const isTotal=x.row.index===body.length-1;
+         x.cell.styles.fontStyle='bold';
+         if(isTotal){
+           x.cell.styles.fillColor=totalYellow;
+           x.cell.styles.textColor=[0,0,0];
+           x.cell.styles.fontSize=9;
+           return;
+         }
+         if(x.section==='body' && (x.column.index===6 || x.column.index===10)){
+           const raw=String(x.cell.raw??'').replace('%','');
+           const v=Number(raw);
+           if(Number.isFinite(v))x.cell.styles.fillColor=scaleColor(v);
+           x.cell.styles.fontStyle='bold';
+         }
+         if(x.section==='body' && x.column.index===9){
+           const v=Number(x.cell.raw);
+           x.cell.styles.fillColor=v>0?[198,239,206]:v<0?[255,199,206]:[231,230,230];
+           x.cell.styles.textColor=v>0?[0,97,0]:v<0?[156,0,6]:[89,89,89];
+           x.cell.styles.fontStyle='bold';
+         }
+         if(x.section==='body' && x.column.index===11){
+           const v=Number(x.cell.raw);
+           if(v>0){x.cell.styles.fillColor=[255,235,156];x.cell.styles.textColor=[156,101,0];}
+           else{x.cell.styles.fillColor=[231,230,230];x.cell.styles.textColor=[89,89,89];}
+         }
+       },
+       didDrawPage:x=>{
+         d.setFont('helvetica','bold');d.setFontSize(7);d.setTextColor(90,90,90);
+         d.text('AC-34 MATIALA • SIR-2026 • PS-WISE AERO/Ad.AERO REPORT',8,292);
+         d.text('Page '+x.pageNumber,412,292,{align:'right'});
+       }
+     });
    });
    d.save('AC34_PS_WISE_AERO_WISE_REPORT.pdf');
  }
