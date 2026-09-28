@@ -61,6 +61,24 @@ function parseReference(wb){
  order=[...order,...names.filter(x=>!order.includes(x))];
  return {mapping:mr,hearing:hr,scheduledMap:Object.fromEntries(scheduledMap),officerOrder:order};
 }
+const AERO_GROUPS=[
+  {name:"Sh. Ajay Kumar, Ad.AERO",mobile:"9718343424",ps:[146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,170,171,172,175,176,177,178,179,180,185,187,188,189,190,191,192,193,276,277,286,287,288]},
+  {name:"Smt. Ranjana Sharma, Ad.AERO",mobile:"9540474555",ps:[164,165,166,167,168,169,173,174,181,182,183,184,186,222,224,225,231,232,233,234,278,279,280,281,282,283,284,285]},
+  {name:"Smt. Mamta Meena, Ad.AERO",mobile:"9318473015",ps:[194,195,196,197,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,223,226,227,228,229,230]},
+  {name:"Sh. Rajesh Shriwastav, Ad.AERO",mobile:"9818148076",ps:[1,2,3,12,13,14,18,19,20,21,22,23,24,25,35,42,43,44,45,46,47,48,49,50,55,56]},
+  {name:"Smt. Saroj Meena, Ad.AERO",mobile:"9818244615",ps:[4,5,6,7,8,9,10,11,15,16,17,26,27,28,29,30,31,32,33,34,57,58,59,60]},
+  {name:"Smt. Shashi Bala, AERO",mobile:"9953312984",ps:[80,81,82,83,84,85,86,87,88,89,90,97,98,99,100,101,102,103,104,105,106,107,108,109,135,136,137,138,139,140,141,142,143,144,145]},
+  {name:"Sh. Hemvir, Ad.AERO",mobile:"9910172161",ps:[36,37,38,39,40,41,51,52,53,54,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,91,92,93,94,95,96]},
+  {name:"Sh. Rakesh Yadav, Ad.AERO",mobile:"7011971522",ps:[110,111,112,113,114,115,116,117,118]},
+  {name:"Sh. Mohit, Ad.AERO",mobile:"9654467035",ps:[119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,331,332,333,334,335,336,337,338,339,340,341,343,344,347,348,349]},
+  {name:"Sh. Subhashish Boss, AERO",mobile:"9810598314",ps:[235,236,237,245,246,247,252,253,254,255,256,264,265,266,268,269,270,289,290,291,292,310,311,312,313,314,315,316,317,318,319,320,321,322]},
+  {name:"Smt. Vandana Bansal, Ad.AERO",mobile:"8700311269",ps:[238,239,240,241,242,243,244,248,249,250,251,257,258,259,260,261,262,263,267,271,272,273,274,275,299,300,301,302,325,326,327,328,329,330]},
+  {name:"Sh. Dharamvir Singh, Ad.AERO",mobile:"9871534579",ps:[293,294,295,296,297,298,303,304,305,306,307,308,309,323,324]},
+  {name:"Sh. Virender Singh, AERO",mobile:"9868252144",ps:[342,345,346,350,351,352,353,354,355,356,357,358,359,360,361,362,363,364,365,366,367,368,369,370,371,372,373,374]},
+  {name:"Sh. Manoj Kumar, Ad.AERO",mobile:"9811802528",ps:[375,376,377,378,379,380,381,382,383,384,385,386,387,388,389,390,391,392,393,394,395,396,397,398,399,400,401,402,403,404,405,406,407,408,409,410,411,412,413,414,415,416,417,418,419,420,421,422,423,424,425,426,427,428,429,430]}
+];
+const AERO_BY_PS=new Map(AERO_GROUPS.flatMap(g=>g.ps.map(ps=>[ps,{name:g.name,mobile:g.mobile}])));
+
 function parseECI(wb){
  const names=['sirNoticeGenerate','ECI Raw Data','Part Wise Report'];
  let rows=[];
@@ -70,12 +88,12 @@ function parseECI(wb){
  if(hi<0)throw Error('ECI workbook: Part No column not found.');
  const head=rows[hi].map(v=>String(v??'').trim());
  const ix=key=>head.findIndex(v=>v.toLowerCase()===key.toLowerCase());
- const p=ix('Part No'),gen=ix('Notice Generated'),pg=ix('Pending for Notice Generation'),del=ix('Notice Delivered'),pend=ix('Notice Pending Delivery'),held=ix('Hearings Held'),lapsed=ix('Hearing Date Lapsed');
+ const p=ix('Part No'),gen=ix('Notice Generated'),pg=ix('Pending for Notice Generation'),del=ix('Notice Delivered'),pend=ix('Notice Pending Delivery'),held=ix('Hearings Held'),lapsed=ix('Hearing Date Lapsed'),park=ix('Parked for Final Publication');
  if([p,gen,pg,del,pend,held,lapsed].some(x=>x<0))throw Error('ECI workbook is missing one or more required columns.');
  const out=new Map();
  rows.slice(hi+1).forEach(r=>{
    const ps=n(r[p]);if(!ps)return;
-   out.set(ps,{ps,generated:n(r[gen]),pendingGen:n(r[pg]),delivered:n(r[del]),pending:n(r[pend]),held:n(r[held]),lapsed:n(r[lapsed])});
+   out.set(ps,{ps,generated:n(r[gen]),pendingGen:n(r[pg]),delivered:n(r[del]),pending:n(r[pend]),held:n(r[held]),lapsed:n(r[lapsed]),parked:park>=0?n(r[park]):0});
  });
  if(out.size<400)throw Error('ECI workbook appears incomplete: fewer than 400 PS records found.');
  return out;
@@ -105,7 +123,8 @@ function buildData(ref,eci,blo,baseline){
    const delivered=n(e.delivered),scheduled=n(ref.scheduledMap?.[ps]),docs=n(b.docs),held=n(e.held),lapsed=n(e.lapsed);
    const y=baseline?.get(ps)||{delivered:0,pending:0,held:0,lapsed:0};
    const todayDelivered=delivered-n(y.delivered),todayPending=n(e.pending)-n(y.pending),todayHeld=held-n(y.held),todayLapsed=lapsed-n(y.lapsed);
-   return {ps,officer:map.officer,blo:map.blo,supervisor:map.supervisor,centre:map.centre,generated:n(e.generated),pendingGen:n(e.pendingGen),scheduled,delivered,pending:n(e.pending),deliveredPct:scheduled?delivered/scheduled*100:0,docs,docsPct:delivered?docs/delivered*100:0,dates:h.dates||'',status:h.status||'',heldLapsed:held+lapsed,disposal:held,disposalPct:(held+lapsed)?held/(held+lapsed)*100:0,yesterdayDelivered:n(y.delivered),todayDelivered,todayPending,yesterdayPending:n(y.pending),yesterdayHeld:n(y.held),todayHeld,yesterdayLapsed:n(y.lapsed),todayLapsed,totalDelivered:delivered,totalPending:n(e.pending),totalHeld:held,totalLapsed:lapsed};
+   const ai=AERO_BY_PS.get(ps)||{name:'Unmapped AERO',mobile:''};
+   return {ps,aero:ai.name,aeroMobile:ai.mobile,officer:map.officer,blo:map.blo,supervisor:map.supervisor,centre:map.centre,generated:n(e.generated),pendingGen:n(e.pendingGen),scheduled,delivered,pending:n(e.pending),deliveredPct:scheduled?delivered/scheduled*100:0,docs,docsPct:delivered?docs/delivered*100:0,dates:h.dates||'',status:h.status||'',heldLapsed:held+lapsed,disposal:held,disposalPct:(held+lapsed)?held/(held+lapsed)*100:0,yesterdayDelivered:n(y.delivered),todayDelivered,todayPending,yesterdayPending:n(y.pending),yesterdayHeld:n(y.held),todayHeld,yesterdayLapsed:n(y.lapsed),todayLapsed,totalDelivered:delivered,totalPending:n(e.pending),totalHeld:held,totalLapsed:lapsed,parked:n(e.parked)};
  });
  const wanted=['S No','Officer Name','No. of PS','Notice Generated (NO MAP + ANOMALY)','Hearing Notice Scheduled NO MAPPING','NO MAP NOTICE DELIVERED','% NO MAPPING DELIVERED','Documents Uploaded by BLO','% Docs Uploaded (of Notice Delivered)','Hearing Held + Date Lapsed','Total Disposal','% Total Disposal'];
  const officers=names.map((name,i)=>{
@@ -117,9 +136,15 @@ function buildData(ref,eci,blo,baseline){
    return {sno:i+1,name:cleanOfficerName(name),ps:rr.length,generated:sum('generated'),pendingGen:sum('pendingGen'),scheduled,delivered,deliveredPct:scheduled?delivered/scheduled*100:0,pendingDelivery:sum('pending'),held:disposal,lapsed:heldLapsed-disposal,docs,reportRow:row};
  });
  const reportHeaders=['S No','Officer Name','No. of PS','Notice Generated (NO MAP + ANOMALY)','Hearing Notice Scheduled NO MAPPING','NO MAP NOTICE DELIVERED','% NO MAPPING DELIVERED','Documents Uploaded by BLO','% Docs Uploaded (of Notice Delivered)','Hearing Held + Date Lapsed','Disposal Till Yesterday','Disposal Today','Total Disposal','% Total Disposal'];
+ const aeroReports=AERO_GROUPS.map((g,gi)=>{
+   const rr=details.filter(r=>AERO_BY_PS.get(r.ps)?.name===g.name);
+   const supervisors=[...new Set(rr.map(r=>String(r.supervisor||'').trim()).filter(Boolean))];
+   const generated=rr.reduce((s,r)=>s+n(r.generated),0),delivered=rr.reduce((s,r)=>s+n(r.delivered),0),lapse=rr.reduce((s,r)=>s+n(r.totalLapsed),0),held=rr.reduce((s,r)=>s+n(r.totalHeld),0),parked=rr.reduce((s,r)=>s+n(r.parked),0);
+   return {sno:gi+1,name:g.name,mobile:g.mobile,supervisors,ps:rr.length,generated,delivered,deliveredPct:generated?delivered/generated*100:0,lapse,held,heldLapsed:held+lapse,heldLapsedPct:generated?(held+lapse)/generated*100:0,parked,rows:rr.sort((a,b)=>a.ps-b.ps)};
+ });
  const reportRows=officers.map(o=>o.reportRow);
  const grandVals=(()=>{const sum=k=>details.reduce((a,r)=>a+n(r[k]),0);const scheduled=sum('scheduled'),delivered=sum('delivered'),docs=sum('docs'),heldLapsed=sum('heldLapsed'),disposal=sum('disposal'),yesterdayDisposal=sum('yesterdayHeld'),todayDisposal=sum('todayHeld');return ['GRAND TOTAL','',details.length,sum('generated'),scheduled,delivered,scheduled?delivered/scheduled*100:0,docs,delivered?docs/delivered*100:0,heldLapsed,yesterdayDisposal,todayDisposal,disposal,heldLapsed?disposal/heldLapsed*100:0]})();
- return {officers,details,reportHeaders,reportRows,grandRow:grandVals,sourceCounts:{eci:eci.size,blo:blo.size,reference:ref.mapping.length},hasBaseline:!!baseline};
+ return {officers,details,aeroReports,reportHeaders,reportRows,grandRow:grandVals,sourceCounts:{eci:eci.size,blo:blo.size,reference:ref.mapping.length},hasBaseline:!!baseline};
 }
 function parseLegacy(wb){return parseReference(wb)}
 
