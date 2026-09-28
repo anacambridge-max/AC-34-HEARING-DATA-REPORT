@@ -65,3 +65,12 @@
 .officer-dashboard-report.report-excel th:nth-child(10),.officer-dashboard-report.report-excel td:nth-child(10){width:7%}
 .officer-dashboard-report.report-excel th:nth-child(11),.officer-dashboard-report.report-excel td:nth-child(11){width:7%}
 .officer-dashboard-report.report-excel th:nth-child(12),.officer-dashboard-report.report-excel td:nth-child(12){width:5%}
+
+/* AERO-wise reporting */
+.aero-report table{width:100%;min-width:1100px;border-collapse:collapse}
+.aero-report th{white-space:normal;line-height:1.15}
+.aero-report td.left,.aero-report th:nth-child(2){text-align:left}
+.aero-group{margin-top:22px;border:1px solid #263b5e;border-radius:12px;overflow:hidden;background:#081426}
+.aero-group-head{padding:12px 16px;background:#102342;color:#fff;border-bottom:1px solid #2d4770}
+.aero-group-head h3{margin:0;font-size:16px}.aero-group-head small{opacity:.75}
+.aero-group .table-wrap{margin:0;border-radius:0}
