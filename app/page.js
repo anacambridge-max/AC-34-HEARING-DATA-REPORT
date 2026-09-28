@@ -127,10 +127,10 @@ function buildData(ref,eci,comparison){
    const y=comparison?.get(ps)||{delivered:0,pending:0,held:0,lapsed:0};
    const comparisonHeld=n(y.held);
    const heldCount=n(e.held);
-   const heldDifference=held-comparisonHeld;
+   const heldDifference=heldCount-comparisonHeld;
    const todayDelivered=delivered-n(y.delivered),todayPending=n(e.pending)-n(y.pending),todayHeld=held-n(y.held),todayLapsed=lapsed-n(y.lapsed);
    const ai=AERO_BY_PS.get(ps)||{name:'Unmapped AERO',mobile:''};
-   return {ps,aero:ai.name,aeroMobile:ai.mobile,officer:map.officer,blo:map.blo,supervisor:map.supervisor,centre:map.centre,generated:n(e.generated),pendingGen:n(e.pendingGen),scheduled,delivered,pending:n(e.pending),deliveredPct:n(e.generated)?delivered/n(e.generated)*100:0,docs,docsPct:delivered?docs/delivered*100:0,dates:h.dates||'',status:h.status||'',held,comparisonHeld,heldDifference,disposal:heldCount,disposalPct:held?held/held*100:0,yesterdayDelivered:n(y.delivered),todayDelivered,todayPending,yesterdayPending:n(y.pending),yesterdayHeld:n(y.held),todayHeld,yesterdayLapsed:n(y.lapsed),todayLapsed,totalDelivered:delivered,totalPending:n(e.pending),totalHeld:heldCount,totalLapsed:lapsed,parked:n(e.parked)};
+   return {ps,aero:ai.name,aeroMobile:ai.mobile,officer:map.officer,blo:map.blo,supervisor:map.supervisor,centre:map.centre,generated:n(e.generated),pendingGen:n(e.pendingGen),scheduled,delivered,pending:n(e.pending),deliveredPct:n(e.generated)?delivered/n(e.generated)*100:0,docs,docsPct:delivered?docs/delivered*100:0,dates:h.dates||'',status:h.status||'',held:heldCount,comparisonHeld,heldDifference,disposal:heldCount,disposalPct:n(e.generated)?heldCount/n(e.generated)*100:0,yesterdayDelivered:n(y.delivered),todayDelivered,todayPending,yesterdayPending:n(y.pending),yesterdayHeld:n(y.held),todayHeld,yesterdayLapsed:n(y.lapsed),todayLapsed,totalDelivered:delivered,totalPending:n(e.pending),totalHeld:heldCount,totalLapsed:lapsed,parked:n(e.parked)};
  });
  const officers=names.map((name,i)=>{
    const rr=details.filter(r=>cleanOfficerName(r.officer)===cleanOfficerName(name));
