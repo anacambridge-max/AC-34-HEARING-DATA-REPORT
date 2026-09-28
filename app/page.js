@@ -299,16 +299,14 @@ function uploadSource(e,kind){const f=e.target.files?.[0];if(!f)return;readFile(
  }
 
  return <main>
- <header className="topbar"><div><div className="eyebrow">SIR-2026 • AC-34 MATIALA</div><h1>Officer Command Dashboard</h1><p>Upload the ECI report and BLO Documents report. Existing PS mapping and Hearing Dates are preserved.</p></div><div className="source-actions">
+ <header className="topbar"><div><div className="eyebrow">SIR-2026 • AC-34 MATIALA</div><h1>Officer Command Dashboard</h1><p>Upload the latest ECI report and the ECI comparison report. PS/BLO/Supervisor mapping and AERO/Ad.AERO mapping are built in.</p></div><div className="source-actions">
 <label className="upload">{busy?'READING…':'1. ECI UPDATED REPORT'}<input type="file" accept=".xlsx,.xls" onChange={e=>uploadSource(e,'eci')}/></label>
 <label className="upload">{busy?'READING…':'2. ECI COMPARISON REPORT'}<input type="file" accept=".xlsx,.xls" onChange={e=>uploadSource(e,'comparison')}/></label>
 </div></header>
- {!data?<section className="empty"><h2>LOAD THE 3 DATA SOURCES</h2><p>Reference is needed once. Upload the 2 AM ECI report as the baseline once; after that, upload the latest ECI and BLO files repeatedly. Today is calculated against the baseline; Total is the latest ECI value.</p><div className="setup-grid">
-<label className="upload big">1. REFERENCE / HEARING DATA<input type="file" accept=".xlsx,.xls" onChange={uploadLegacy}/></label>
-<label className="upload big">2. YESTERDAY 2 AM BASELINE<input type="file" accept=".xlsx,.xls" onChange={e=>uploadSource(e,'baseline')}/></label>
-<label className="upload big">3. ECI UPDATED FILE<input type="file" accept=".xlsx,.xls" onChange={e=>uploadSource(e,'eci')}/></label>
-<label className="upload big">4. BLO DOCUMENTS FILE<input type="file" accept=".xlsx,.xls" onChange={e=>uploadSource(e,'blo')}/></label>
-</div><div className="status-box"><b>Reference:</b> {refFile|| (reference?'Saved in this browser':'Not loaded')} &nbsp; • &nbsp; <b>Baseline:</b> {baselineFile|| (baseline?'Saved in this browser':'Not loaded')} &nbsp; • &nbsp; <b>ECI:</b> {eciFile||'Not loaded'} &nbsp; • &nbsp; <b>BLO:</b> {bloFile||'Not loaded'}</div></section>:<div>
+ {!data?<section className="empty"><h2>LOAD THE 2 ECI DATA SOURCES</h2><p>Upload the latest ECI report and the ECI comparison report. PS/BLO/Supervisor mapping is built in, and the PS-to-AERO/Ad.AERO grouping is taken from the supplied 28.09.2026 AERO PDF. Today is calculated against the comparison report; Total is the latest ECI value.</p><div className="setup-grid">
+<label className="upload big">1. ECI UPDATED REPORT<input type="file" accept=".xlsx,.xls" onChange={e=>uploadSource(e,'eci')}/></label>
+<label className="upload big">2. ECI COMPARISON REPORT<input type="file" accept=".xlsx,.xls" onChange={e=>uploadSource(e,'comparison')}/></label>
+</div><div className="status-box"><b>ECI Updated:</b> {eciFile||'Not loaded'} &nbsp; • &nbsp; <b>ECI Comparison:</b> {comparisonFile||'Not loaded'} &nbsp; • &nbsp; <b>PS/AERO Mapping:</b> Built in</div></section>:<div>
  <div className="filebar">ECI UPDATED: <b>{eciFile||'—'}</b> • ECI COMPARISON: <b>{comparisonFile||'—'}</b> • PS/AERO MAPPING: <b>MASTER + 28.09.2026 AERO PDF</b> • <b>{data.officers.length}</b> officers • <b>{data.details.length}</b> PS updated</div>
  <nav className="tabs"><button className={tab==='dash'?'active':''} onClick={()=>setTab('dash')}>6 OFFICER DASHBOARDS</button><button className={tab==='report'?'active':''} onClick={()=>setTab('report')}>OFFICER WISE REPORT</button><button className={tab==='aero'?'active':''} onClick={()=>setTab('aero')}>AERO WISE REPORT</button><button className={tab==='aeroPs'?'active':''} onClick={()=>setTab('aeroPs')}>PS WISE AERO REPORT</button></nav>
  {tab==='dash'?<div>
